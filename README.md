@@ -14,11 +14,14 @@ The brain age prediction model is based on the publication:
 > **Chu-Chung Huang, et al. (2022)**. *Brain white matter hyperintensities-predicted age reflects neurovascular health in middle-to-old aged subjects*. **Age and Ageing**, 51(8), afac106. [https://doi.org/10.1093/ageing/afac106](https://doi.org/10.1093/ageing/afac106)
 
 The model computes volumes for:
-- **PVWMH** (Periventricular White Matter Hyperintensity, $\le 10\text{ mm}$ from ventricular lining)
-- **DWMH** (Deep White Matter Hyperintensity, $> 10\text{ mm}$ from ventricular lining)
+- **PVWMH** (Periventricular White Matter Hyperintensity, ≤ 10 mm from ventricular lining)
+- **DWMH** (Deep White Matter Hyperintensity, > 10 mm from ventricular lining)
 
 The predicted WMH Brain Age is estimated via:
-$$\text{Predicted Age} = 11.069 \cdot \log_{10}(\max(V_{\text{PV}}, 10^{-4})) + 1.624 \cdot \log_{10}(\max(V_{\text{D}}, 10^{-4})) + 64.159$$
+
+$$
+\text{Predicted Age} = 11.069 \cdot \log_{10}(\max(V_{\text{PV}}, 10^{-4})) + 1.624 \cdot \log_{10}(\max(V_{\text{D}}, 10^{-4})) + 64.159
+$$
 
 Pre-trained model (`WMHAge_PredicitonModel.mat`) trained on 491 healthy participants is included in the repository.
 
@@ -115,10 +118,47 @@ WMH-Age-Prediction/
 └── README.md               # Documentation
 ```
 
+---
+
 ## Citation
-If you use this pipeline in your research, please cite:
-1. Huang CC, et al. *Brain white matter hyperintensities-predicted age reflects neurovascular health in middle-to-old aged subjects*. Age and Ageing. 2022;51(8):afac106. DOI: [10.1093/ageing/afac106](https://doi.org/10.1093/ageing/afac106).
-2. Schmidt P, et al. *An automated tool for detection of FLAIR-hyperintense white-matter lesions in Multiple Sclerosis*. NeuroImage. 2012;59(4):3774-3788.
+
+Please cite the corresponding papers depending on which components you use in your study:
+
+### 1. If you use WMH-based Brain Age Prediction or regional WMH volume calculation (PVWMH / DWMH):
+> **Huang CC**, et al. *Brain white matter hyperintensities-predicted age reflects neurovascular health in middle-to-old aged subjects*. **Age and Ageing**. 2022;51(8):afac106.  
+> DOI: [10.1093/ageing/afac106](https://doi.org/10.1093/ageing/afac106)
+
+```bibtex
+@article{huang2022brain,
+  title={Brain white matter hyperintensities-predicted age reflects neurovascular health in middle-to-old aged subjects},
+  author={Huang, Chu-Chung and others},
+  journal={Age and Ageing},
+  volume={51},
+  number={8},
+  pages={afac106},
+  year={2022},
+  publisher={Oxford University Press},
+  doi={10.1093/ageing/afac106}
+}
+```
+
+### 2. If you use the White Matter Hyperintensity (WMH) lesion segmentation (LST-LGA algorithm):
+> **Schmidt P**, et al. *An automated tool for detection of FLAIR-hyperintense white-matter lesions in Multiple Sclerosis*. **NeuroImage**. 2012;59(4):3774-3788.  
+> DOI: [10.1016/j.neuroimage.2011.11.032](https://doi.org/10.1016/j.neuroimage.2011.11.032)
+
+```bibtex
+@article{schmidt2012automated,
+  title={An automated tool for detection of FLAIR-hyperintense white-matter lesions in Multiple Sclerosis},
+  author={Schmidt, Paul and others},
+  journal={NeuroImage},
+  volume={59},
+  number={4},
+  pages={3774--3788},
+  year={2012},
+  publisher={Elsevier},
+  doi={10.1016/j.neuroimage.2011.11.032}
+}
+```
 
 ## License
 MIT License
