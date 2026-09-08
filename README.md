@@ -123,25 +123,7 @@ WMH-Age-Prediction/
 
 Please cite the corresponding papers depending on which components you use in your study:
 
-### 1. If you use WMH-based Brain Age Prediction or regional WMH volume calculation (PVWMH / DWMH):
-> **Huang CC**, et al. *Brain white matter hyperintensities-predicted age reflects neurovascular health in middle-to-old aged subjects*. **Age and Ageing**. 2022;51(8):afac106.  
-> DOI: [10.1093/ageing/afac106](https://doi.org/10.1093/ageing/afac106)
-
-```bibtex
-@article{huang2022brain,
-  title={Brain white matter hyperintensities-predicted age reflects neurovascular health in middle-to-old aged subjects},
-  author={Huang, Chu-Chung and others},
-  journal={Age and Ageing},
-  volume={51},
-  number={8},
-  pages={afac106},
-  year={2022},
-  publisher={Oxford University Press},
-  doi={10.1093/ageing/afac106}
-}
-```
-
-### 2. If you use the White Matter Hyperintensity (WMH) lesion segmentation (LST-LGA algorithm):
+### 1. If you use the White Matter Hyperintensity (WMH) lesion segmentation (LST-LGA algorithm):
 > **Schmidt P**, et al. *An automated tool for detection of FLAIR-hyperintense white-matter lesions in Multiple Sclerosis*. **NeuroImage**. 2012;59(4):3774-3788.  
 > DOI: [10.1016/j.neuroimage.2011.11.032](https://doi.org/10.1016/j.neuroimage.2011.11.032)
 
@@ -156,6 +138,24 @@ Please cite the corresponding papers depending on which components you use in yo
   year={2012},
   publisher={Elsevier},
   doi={10.1016/j.neuroimage.2011.11.032}
+}
+```
+
+### 2. If you use WMH-based Brain Age Prediction or regional WMH volume calculation (PVWMH / DWMH):
+> **Huang CC**, et al. *Brain white matter hyperintensities-predicted age reflects neurovascular health in middle-to-old aged subjects*. **Age and Ageing**. 2022;51(8):afac106.  
+> DOI: [10.1093/ageing/afac106](https://doi.org/10.1093/ageing/afac106)
+
+```bibtex
+@article{huang2022brain,
+  title={Brain white matter hyperintensities-predicted age reflects neurovascular health in middle-to-old aged subjects},
+  author={Huang, Chu-Chung and others},
+  journal={Age and Ageing},
+  volume={51},
+  number={8},
+  pages={afac106},
+  year={2022},
+  publisher={Oxford University Press},
+  doi={10.1093/ageing/afac106}
 }
 ```
 
