@@ -84,17 +84,16 @@ If you require exact legacy SPM/CAT12 execution without launching the MATLAB GUI
 
 ---
 
-## Benchmark & Validation
+## Segmentation Validation & Visual Comparison
 
-Evaluated on subject scan `MRNE085` comparing the legacy MATLAB (SPM12 + LST-LGA 0.3 + CAT12) vs Python `pywmh_tool`:
+Visual comparison across axial slices between the legacy MATLAB LST-LGA pipeline (green) and the Python `pywmh_tool` implementation (red):
 
-| Metric | MATLAB Legacy (SPM/LST/CAT12) | Python `pywmh_tool` | Difference |
-| :--- | :---: | :---: | :--- |
-| **Execution Time** | ~8 minutes | **~1.9 minutes** | **4x faster** |
-| **Cerebellar / Cortical False Positives** | 0 voxels | **0 voxels** | Clean match |
-| **PVWMH Volume** | 20.70 cc | **23.02 cc** | +2.32 cc (solid core) |
-| **DWMH Volume** | 3.14 cc | **13.72 cc** | +10.58 cc |
-| **Predicted WMH Brain Age** | **79.53 years** | **81.08 years** | **+1.55 years (< 2% diff)** |
+![WMH Segmentation Comparison](docs/images/wmh_segmentation_comparison.png)
+
+### Lesion Detail Close-Up
+Close-up inspection of the periventricular occipital lesion confirms faithful boundary delineation and solid lesion core segmentation matching the FLAIR hyperintensity:
+
+![Occipital Lesion Close-Up](docs/images/lesion_detail_comparison.png)
 
 ---
 
