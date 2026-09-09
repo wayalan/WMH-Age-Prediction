@@ -141,7 +141,8 @@ WMH-Age-Prediction/
 This project builds upon and integrates foundational tools developed by the neuroimaging community:
 
 - **[LST (Lesion Segmentation Tool)](https://www.applied-statistics.de/lst.html)**: Developed by Paul Schmidt, Christian Gaser, and colleagues at the Technische Universität München. `pywmh` implements a faithful, MATLAB-independent Python port of the LST Lesion Growth Algorithm (LGA).
-- **[FSL (FMRIB Software Library)](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki)**: Developed by the Analysis Group, FMRIB, University of Oxford. Used in this pipeline for robust structural brain extraction (`bet`), rigid cross-modal co-registration (`flirt`), and automated tissue segmentation (`fast`).
+- **[FSL (FMRIB Software Library)](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki)**: Developed by the Analysis Group, FMRIB, University of Oxford. Used in this pipeline for robust structural brain extraction (`bet`), rigid cross-modal co-registration (`flirt`), automated tissue segmentation (`fast`), and the MNI Structural Atlas.
+- **[Digital 3D Brain MRI Arterial Territories Atlas](https://github.com/Chin-Fu-Liu/Arterial_Atlas)**: Developed by Chin-Fu Liu, Andreia Faria, and colleagues at Johns Hopkins University School of Medicine. Used for hierarchical parcellation of major arterial vascular territories (ACA, MCA, PCA, VB).
 - **[SPM (Statistical Parametric Mapping)](https://www.fil.ion.ucl.ac.uk/spm/)**: Developed by the Wellcome Centre for Human Neuroimaging, University College London (UCL). Hosts the reference MATLAB implementation of the LST toolbox.
 
 ---
@@ -186,7 +187,45 @@ Please cite the corresponding papers depending on which components you use in yo
 }
 ```
 
-### 3. For FSL Processing Tools:
+### 3. For Arterial Vascular Territory Parcellation:
+> **Liu CF**, Hsu J, Xu X, Kim G, Sheppard SM, Meier EL, Miller MI, Hillis AE, Faria AV. *Digital 3D Brain MRI Arterial Territories Atlas*. **Scientific Data**. 2023;10(1):74.  
+> DOI: [10.1038/s41597-022-01923-0](https://doi.org/10.1038/s41597-022-01923-0)
+
+```bibtex
+@article{liu2023digital,
+  title={Digital 3D Brain MRI Arterial Territories Atlas},
+  author={Liu, Chin-Fu and Hsu, Jui-Yang and Xu, Xiaoying and Kim, Gina and Sheppard, Shannon M and Meier, Elizabeth L and Miller, Michael I and Hillis, Argye E and Faria, Andreia V},
+  journal={Scientific Data},
+  volume={10},
+  number={1},
+  pages={74},
+  year={2023},
+  publisher={Nature Publishing Group UK London},
+  doi={10.1038/s41597-022-01923-0}
+}
+```
+
+### 4. For Cerebral Lobar Parcellation (MNI Structural Atlas):
+> **Mazziotta J**, et al. *A probabilistic atlas and reference system for the human brain: International Consortium for Brain Mapping (ICBM)*. **Philosophical Transactions of the Royal Society of London. Series B: Biological Sciences**. 2001;356(1412):1293-1322.  
+> DOI: [10.1098/rstb.2001.0915](https://doi.org/10.1098/rstb.2001.0915)  
+> **Collins DL**, Holmes CJ, Peters TM, Evans AC. *Automatic 3-D model-based neuroanatomical segmentation*. **Human Brain Mapping**. 1995;3(3):190-208.  
+> DOI: [10.1002/hbm.460030304](https://doi.org/10.1002/hbm.460030304)
+
+```bibtex
+@article{mazziotta2001probabilistic,
+  title={A probabilistic atlas and reference system for the human brain: International Consortium for Brain Mapping (ICBM)},
+  author={Mazziotta, John and others},
+  journal={Philosophical Transactions of the Royal Society of London. Series B: Biological Sciences},
+  volume={356},
+  number={1412},
+  pages={1293--1322},
+  year={2001},
+  publisher={The Royal Society},
+  doi={10.1098/rstb.2001.0915}
+}
+```
+
+### 5. For FSL Processing Tools:
 > **Jenkinson M**, Beckmann CF, Behrens TE, Woolrich MW, Smith SM. *FSL*. **NeuroImage**. 2012;62(2):782-790.  
 > DOI: [10.1016/j.neuroimage.2011.09.015](https://doi.org/10.1016/j.neuroimage.2011.09.015)
 
