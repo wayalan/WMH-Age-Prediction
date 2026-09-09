@@ -23,8 +23,6 @@ $$
 \text{Predicted Age} = 11.069 \cdot \log_{10}(\max(V_{\text{PV}}, 10^{-4})) + 1.624 \cdot \log_{10}(\max(V_{\text{D}}, 10^{-4})) + 64.159
 $$
 
-Pre-trained model (`WMHAge_PredicitonModel.mat`) trained on 491 healthy participants is included in the repository.
-
 ---
 
 ## 1. Pure Python Standalone Pipeline (`pywmh_tool.py`)
@@ -110,8 +108,6 @@ WMH-Age-Prediction/
 ├── AutomatedWMHAge.m       # Optimized MATLAB pipeline (SPM12/LST/CAT12)
 ├── run_wmh_age.sh          # Headless shell script for MATLAB execution
 ├── WMH_Atlas/              # 1mm and 1.5mm PV/D WMH atlases, atlas_wm & noles
-├── WMHAge_PredicitonModel.mat # Pre-trained regression model (MATLAB)
-├── sample_data.mat         # Benchmark testing sample data
 ├── requirements.txt        # Python package dependencies
 ├── LICENSE                 # MIT License
 └── README.md               # Documentation
