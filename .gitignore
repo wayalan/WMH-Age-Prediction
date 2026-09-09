@@ -22,3 +22,5 @@ scratch/
 # IDE
 .vscode/
 .idea/
+ExampleData/
+comparison_test_MRNE066/

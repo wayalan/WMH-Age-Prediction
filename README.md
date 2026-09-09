@@ -56,6 +56,7 @@ As in the original LST-LGA implementation, $\kappa$ (kappa) is the user-definabl
 python pywmh_tool.py \
   --t1 /path/to/T1w.nii.gz \
   --flair /path/to/FLAIR.nii.gz \
+  --age 65.0 \
   --outdir /path/to/output_directory \
   --kappa 0.3
 ```
@@ -63,17 +64,25 @@ python pywmh_tool.py \
 #### Arguments:
 - `--t1`: Path to T1-weighted structural MRI scan (`.nii` or `.nii.gz`).
 - `--flair`: Path to 3D T2-FLAIR MRI scan (`.nii` or `.nii.gz`).
+- `--age`: (Optional) Patient's actual chronological age in years. Automatically computes **Brain Age Gap (BAG)**.
 - `--outdir`: Directory to save outputs.
 - `--kappa`: Initial lesion belief threshold (default: `0.3`, standard LST-LGA setting).
+- `--skip-qc`: (Optional) Skip generating visual QC HTML/PNG reports.
+- `--force`: (Optional) Force re-running all steps even if intermediate files exist.
 - `--nonlinear`: Use FSL FNIRT for non-linear registration to MNI (default: 12-DOF affine FLIRT for speed).
 - `--fsl-dir`: Path to FSL directory if not set in `$FSLDIR`.
 
 ### Outputs
-- `WMH_Age_Results.csv`: Summary table with Total WMH, PVWMH, DWMH (in cc) and Predicted Age.
-- `WMH_Age_Results.json`: Machine-readable results.
+- `WMH_Age_QC_Report.html`: Self-contained, interactive HTML report with embedded high-resolution graphics, metrics tables, and registration sanity checks.
+- `qc_summary.png`: Multi-slice thumbnail snapshot for rapid Finder / Explorer review.
+- `WMH_Age_Results.csv`: Extended summary table with Total WMH, PVWMH, DWMH, TIV, % TIV, Predicted Age, Brain Age Gap, Lobar WMH (Frontal, Parietal, Temporal, Occipital, Subcortical), and Arterial Vascular WMH (ACA, MCA, PCA, VB).
+- `WMH_Age_Results.json`: Comprehensive machine-readable quantification results.
 - `bles_lga_k30.nii.gz`: Native-space binary WMH lesion mask.
+- `ples_lga_k30.nii.gz`: Native-space lesion probability map.
 - `native_PVWMH.nii.gz`: Native-space periventricular mask.
 - `native_DWMH.nii.gz`: Native-space deep white matter mask.
+- `native_lobar.nii.gz`: Native-space cerebral lobar parcellation.
+- `native_arterial.nii.gz`: Native-space arterial vascular territory parcellation.
 - `rmFLAIR.nii.gz`: Rigidly co-registered FLAIR aligned to T1.
 
 ---
