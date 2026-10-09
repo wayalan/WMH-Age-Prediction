@@ -25,6 +25,8 @@ import os
 import sys
 import argparse
 import time
+import hashlib
+import json
 import nibabel as nib
 import numpy as np
 
@@ -39,7 +41,7 @@ from pywmh.fsl_engine import (
     warp_atlas_to_native,
     warp_lesion_to_mni_modulated
 )
-from pywmh.lst_lga import segment_wmh_lga
+from pywmh.lst_lga import ALGORITHM_VERSION, segment_wmh_lga
 from pywmh.age_model import (
     calculate_wmh_volumes_and_age,
     calculate_regional_breakdown,
@@ -66,6 +68,27 @@ def find_dicom_subfolders(dcm_root: str):
             "Please ensure directory names contain 'T1' and 'FLAIR' or 'T2'."
         )
     return t1_dir, flair_dir
+
+
+def segmentation_signature(paths, kappa):
+    """Bind lesion caching to actual native inputs and algorithm equations."""
+    hashes = {}
+    for name, path in paths.items():
+        digest = hashlib.sha256()
+        with open(path, "rb") as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(chunk)
+        hashes[name] = digest.hexdigest()
+    return {"algorithm": ALGORITHM_VERSION, "kappa": kappa,
+            "max_iter": 50, "phi": 1.0, "inputs": hashes}
+
+
+def lesion_cache_matches(path, signature):
+    try:
+        with open(path) as stream:
+            return json.load(stream) == signature
+    except (OSError, ValueError):
+        return False
 
 
 def run_pipeline(
@@ -191,7 +214,8 @@ def run_pipeline(
     pve_files = {
         "pve_csf": f"{fast_base}_pve_0.nii.gz",
         "pve_gm": f"{fast_base}_pve_1.nii.gz",
-        "pve_wm": f"{fast_base}_pve_2.nii.gz"
+        "pve_wm": f"{fast_base}_pve_2.nii.gz",
+        "t1_corrected": f"{fast_base}_restore.nii.gz"
     }
     if not force and all(os.path.exists(p) for p in pve_files.values()):
         print("  -> Existing tissue segmentation found. Skipping FAST.")
@@ -255,8 +279,8 @@ def run_pipeline(
                 continue
             warp_atlas_to_native(src_atlas, t1_path, warp_arg, dst_native, is_nonlinear=is_nl)
 
-    # 7. WMH Segmentation via Faithful Python LST-LGA
-    print(f"\n[Step 5/5] Running Official Python LST-LGA WMH Segmentation (kappa={kappa:.2f})...")
+    # 7. Native WMH segmentation with the original LST-LGA equations
+    print(f"\n[Step 5/5] Running native Python LST-LGA segmentation (kappa={kappa:.2f})...")
     flair_img = nib.load(flair_coreg)
     flair_data = flair_img.get_fdata()
 
@@ -265,6 +289,7 @@ def run_pipeline(
     wm_data = nib.load(pve_maps["pve_wm"]).get_fdata()
     csf_data = nib.load(pve_maps["pve_csf"]).get_fdata()
     brain_mask_data = nib.load(t1_brain_mask).get_fdata() > 0
+    t1_corrected_data = nib.load(pve_maps["t1_corrected"]).get_fdata()
 
     # Calculate Total Intracranial Volume (TIV) from FAST PVE maps
     voxel_vol_cc = float(np.prod(gm_img.header.get_zooms()[:3])) / 1000.0
@@ -275,8 +300,14 @@ def run_pipeline(
 
     ples_native_path = os.path.join(outdir, f"ples_lga_k{int(kappa*100):02d}.nii.gz")
     bles_native_path = os.path.join(outdir, f"bles_lga_k{int(kappa*100):02d}.nii.gz")
+    metadata_path = os.path.join(outdir, f"lga_k{int(kappa*100):02d}_inputs.json")
+    signature = segmentation_signature({
+        **pve_maps, "flair": flair_coreg, "brain_mask": t1_brain_mask,
+        "atlas_wm": native_atlas_wm_path, "noles": native_noles_path,
+    }, kappa)
 
-    if not force and os.path.exists(ples_native_path) and os.path.exists(bles_native_path):
+    if (not force and os.path.exists(ples_native_path) and os.path.exists(bles_native_path)
+            and lesion_cache_matches(metadata_path, signature)):
         print("  -> Existing lesion maps found. Skipping LGA iterations.")
     else:
         prob_map, binary_mask = segment_wmh_lga(
@@ -287,11 +318,18 @@ def run_pipeline(
             brain_mask=brain_mask_data,
             atlas_wm=watlas_wm_data,
             noles_mask=wnoles_data,
+            t1=t1_corrected_data,
             kappa=kappa,
             verbose=True
         )
-        nib.save(nib.Nifti1Image(prob_map, flair_img.affine, flair_img.header), ples_native_path)
-        nib.save(nib.Nifti1Image(binary_mask, flair_img.affine, flair_img.header), bles_native_path)
+        probability_img = nib.Nifti1Image(prob_map, flair_img.affine, flair_img.header)
+        probability_img.set_data_dtype(np.float32)
+        binary_img = nib.Nifti1Image(binary_mask, flair_img.affine, flair_img.header)
+        binary_img.set_data_dtype(np.uint8)
+        nib.save(probability_img, ples_native_path)
+        nib.save(binary_img, bles_native_path)
+        with open(metadata_path, "w") as stream:
+            json.dump(signature, stream, indent=2, allow_nan=False)
         print(f"Saved native lesion probability map: {ples_native_path}")
 
     # Optional: Also produce modulated MNI lesion map m0wples (for SPM equivalence)

@@ -24,3 +24,11 @@ scratch/
 .idea/
 ExampleData/
 comparison_test_MRNE066/
+
+# Local test inputs, generated report runtime, and authoring-only files
+reports/2026-10-09_native_comparison/data/native/
+reports/2026-10-09_native_comparison/report_app/
+reports/2026-10-09_native_comparison/initial_snapshot.json
+reports/2026-10-09_native_comparison/build_pdf.py
+reports/2026-10-09_native_comparison/images/report_cover_preview.png
+docs/segmentation_audit_metrics.json

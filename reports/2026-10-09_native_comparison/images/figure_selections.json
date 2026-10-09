@@ -1,0 +1,106 @@
+[
+  {
+    "case": "MRNE085",
+    "figure": "MRNE085_overview_1.png",
+    "slices": [
+      33,
+      79,
+      104
+    ],
+    "selection_rule": "Four evenly spaced lesion-containing slices, peak union burden and peak disagreement; fill duplicates with evenly spaced remaining slices",
+    "window_low": 29.0,
+    "window_high": 285.0,
+    "crop_xy": [
+      24,
+      170,
+      31,
+      201
+    ]
+  },
+  {
+    "case": "MRNE085",
+    "figure": "MRNE085_overview_2.png",
+    "slices": [
+      119,
+      120,
+      130
+    ],
+    "selection_rule": "Four evenly spaced lesion-containing slices, peak union burden and peak disagreement; fill duplicates with evenly spaced remaining slices",
+    "window_low": 29.0,
+    "window_high": 285.0,
+    "crop_xy": [
+      24,
+      170,
+      31,
+      201
+    ]
+  },
+  {
+    "case": "MRNE085",
+    "figure": "MRNE085_detail.png",
+    "slices": [
+      120
+    ],
+    "selection_rule": "Largest disagreement slice; 48x48 crop centered on highest 40x40 local disagreement density",
+    "window_low": 29.0,
+    "window_high": 285.0,
+    "crop_xy": [
+      67,
+      115,
+      88,
+      136
+    ]
+  },
+  {
+    "case": "MRNE066",
+    "figure": "MRNE066_overview_1.png",
+    "slices": [
+      54,
+      75,
+      97
+    ],
+    "selection_rule": "Four evenly spaced lesion-containing slices, peak union burden and peak disagreement; fill duplicates with evenly spaced remaining slices",
+    "window_low": 35.0,
+    "window_high": 239.0,
+    "crop_xy": [
+      23,
+      173,
+      29,
+      200
+    ]
+  },
+  {
+    "case": "MRNE066",
+    "figure": "MRNE066_overview_2.png",
+    "slices": [
+      104,
+      110,
+      118
+    ],
+    "selection_rule": "Four evenly spaced lesion-containing slices, peak union burden and peak disagreement; fill duplicates with evenly spaced remaining slices",
+    "window_low": 35.0,
+    "window_high": 239.0,
+    "crop_xy": [
+      23,
+      173,
+      29,
+      200
+    ]
+  },
+  {
+    "case": "MRNE066",
+    "figure": "MRNE066_detail.png",
+    "slices": [
+      104
+    ],
+    "selection_rule": "Largest disagreement slice; 48x48 crop centered on highest 40x40 local disagreement density",
+    "window_low": 35.0,
+    "window_high": 239.0,
+    "crop_xy": [
+      70,
+      118,
+      117,
+      165
+    ]
+  }
+]

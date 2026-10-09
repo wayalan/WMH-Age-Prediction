@@ -102,6 +102,7 @@ def tissue_segment_fast(
         "-H", "0.1",    # Spatial smoothness prior
         "-I", "4",      # Number of main-loop iterations
         "-p",           # Output partial volume images
+        "-B",           # Save FAST's bias-corrected T1 for LST PVE labeling
         "-o", out_base,
         t1_brain_path
     ]
@@ -110,15 +111,17 @@ def tissue_segment_fast(
     pve_csf = f"{out_base}_pve_0.nii.gz"
     pve_gm  = f"{out_base}_pve_1.nii.gz"
     pve_wm  = f"{out_base}_pve_2.nii.gz"
+    t1_corrected = f"{out_base}_restore.nii.gz"
 
-    for p in [pve_csf, pve_gm, pve_wm]:
+    for p in [pve_csf, pve_gm, pve_wm, t1_corrected]:
         if not os.path.exists(p):
             raise FileNotFoundError(f"Expected FAST output missing: {p}")
 
     return {
         "pve_csf": pve_csf,
         "pve_gm": pve_gm,
-        "pve_wm": pve_wm
+        "pve_wm": pve_wm,
+        "t1_corrected": t1_corrected
     }
 
 

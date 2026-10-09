@@ -1,0 +1,40 @@
+{
+  "cases": [
+    {
+      "id": "MRNE085",
+      "source_directory": "comparison_test",
+      "matlab_map": "comparison_test/matlab_out/ples_lga_0.3_rmT2f.nii",
+      "native": {
+        "t1_brain": "comparison_test/python_out/T1_brain.nii.gz",
+        "brain_mask": "comparison_test/python_out/T1_brain_mask.nii.gz",
+        "flair": "comparison_test/python_out/rmFLAIR.nii.gz",
+        "atlas_wm": "comparison_test/python_out/watlas_wm.nii.gz",
+        "noles": "comparison_test/python_out/wnoles.nii.gz"
+      },
+      "raw_inputs": {
+        "t1_matlab": "comparison_test/matlab_out/T1w.nii",
+        "t1_python": "comparison_test/python_out/T1_raw.nii.gz",
+        "flair_matlab": "comparison_test/matlab_out/T2f.nii",
+        "flair_python": "comparison_test/python_out/FLAIR_raw.nii.gz"
+      }
+    },
+    {
+      "id": "MRNE066",
+      "source_directory": "comparison_test_MRNE066",
+      "matlab_map": "comparison_test_MRNE066/matlab_out/ples_lga_0.3_rmT2f.nii",
+      "native": {
+        "t1_brain": "comparison_test_MRNE066/python_out/T1_brain.nii.gz",
+        "brain_mask": "comparison_test_MRNE066/python_out/T1_brain_mask.nii.gz",
+        "flair": "comparison_test_MRNE066/python_out/rmFLAIR.nii.gz",
+        "atlas_wm": "comparison_test_MRNE066/python_out/watlas_wm.nii.gz",
+        "noles": "comparison_test_MRNE066/python_out/wnoles.nii.gz"
+      },
+      "raw_inputs": {
+        "t1_matlab": "comparison_test_MRNE066/matlab_out/T1w.nii",
+        "t1_python": "comparison_test_MRNE066/python_out/T1_raw.nii.gz",
+        "flair_matlab": "comparison_test_MRNE066/matlab_out/T2f.nii",
+        "flair_python": "comparison_test_MRNE066/python_out/FLAIR_raw.nii.gz"
+      }
+    }
+  ]
+}

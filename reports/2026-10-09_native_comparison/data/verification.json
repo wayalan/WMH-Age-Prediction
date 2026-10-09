@@ -1,0 +1,30 @@
+[
+  {
+    "case": "MRNE085",
+    "dice_independent_check": true,
+    "slice_totals_reconcile": true,
+    "all_source_hashes_unchanged": true,
+    "matlab_units": [
+      "mm",
+      "sec"
+    ],
+    "python_units": [
+      "mm",
+      "sec"
+    ]
+  },
+  {
+    "case": "MRNE066",
+    "dice_independent_check": true,
+    "slice_totals_reconcile": true,
+    "all_source_hashes_unchanged": true,
+    "matlab_units": [
+      "mm",
+      "sec"
+    ],
+    "python_units": [
+      "mm",
+      "sec"
+    ]
+  }
+]

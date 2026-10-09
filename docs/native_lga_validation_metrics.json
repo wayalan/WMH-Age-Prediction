@@ -1,0 +1,150 @@
+{
+  "algorithm_version": "lst-lga-native-2",
+  "scope": "Native segmentation only; no registration evaluation and no sample-specific fitting",
+  "identical_input_clinical": [
+    {
+      "scope": "Identical upstream inputs, native LGA core; no registration evaluation",
+      "cache": "comparison_test/matlab_out/LST_lga_rmT2f.mat",
+      "reference": "comparison_test/matlab_out/ples_lga_0.3_rmT2f.nii",
+      "kappa": 0.3,
+      "phi": 1,
+      "max_iter": 50,
+      "python_probability_ml": 16.656004120789405,
+      "matlab_probability_ml": 16.656004120789405,
+      "python_binary_ml": 16.285964083313942,
+      "matlab_binary_ml": 16.285964083313942,
+      "dice": 1.0,
+      "binary_disagreement_voxels": 0,
+      "maximum_absolute_probability_error": 0.0,
+      "mean_absolute_probability_error": 0.0,
+      "matches_reference_at_float32_precision": true
+    },
+    {
+      "scope": "Identical upstream inputs, native LGA core; no registration evaluation",
+      "cache": "comparison_test_MRNE066/matlab_out/LST_lga_rmT2f.mat",
+      "reference": "comparison_test_MRNE066/matlab_out/ples_lga_0.3_rmT2f.nii",
+      "kappa": 0.3,
+      "phi": 1,
+      "max_iter": 50,
+      "python_probability_ml": 2.4241334168007187,
+      "matlab_probability_ml": 2.4241334168007187,
+      "python_binary_ml": 2.3219997231960297,
+      "matlab_binary_ml": 2.3219997231960297,
+      "dice": 1.0,
+      "binary_disagreement_voxels": 0,
+      "maximum_absolute_probability_error": 0.0,
+      "mean_absolute_probability_error": 0.0,
+      "matches_reference_at_float32_precision": true
+    }
+  ],
+  "independent_synthetic": [
+    {
+      "scope": "Identical upstream inputs, native LGA core; no registration evaluation",
+      "cache": "<generated-fixtures>/case0/LST_lga_rmFLAIR.mat",
+      "reference": "<generated-fixtures>/case0/ples_lga_0.3_rmFLAIR.nii",
+      "kappa": 0.3,
+      "phi": 1.0,
+      "max_iter": 50,
+      "python_probability_ml": 0.4238485919022933,
+      "matlab_probability_ml": 0.4238485920976335,
+      "python_binary_ml": 0.419,
+      "matlab_binary_ml": 0.419,
+      "dice": 1.0,
+      "binary_disagreement_voxels": 0,
+      "maximum_absolute_probability_error": 2.9618309693724143e-08,
+      "mean_absolute_probability_error": 5.1993149836404195e-11,
+      "fixture": "independent synthetic case0",
+      "maximum_p0_label_error": 0.0,
+      "matches_reference_at_float32_precision": true
+    },
+    {
+      "scope": "Identical upstream inputs, native LGA core; no registration evaluation",
+      "cache": "<generated-fixtures>/case1/LST_lga_rmFLAIR.mat",
+      "reference": "<generated-fixtures>/case1/ples_lga_0.17_rmFLAIR.nii",
+      "kappa": 0.17,
+      "phi": 0.65,
+      "max_iter": 12,
+      "python_probability_ml": 0.6535371325314046,
+      "matlab_probability_ml": 0.6535371325487263,
+      "python_binary_ml": 0.654,
+      "matlab_binary_ml": 0.654,
+      "dice": 1.0,
+      "binary_disagreement_voxels": 0,
+      "maximum_absolute_probability_error": 2.230743711972849e-08,
+      "mean_absolute_probability_error": 8.455980452310702e-12,
+      "fixture": "independent synthetic case1",
+      "maximum_p0_label_error": 0.0,
+      "matches_reference_at_float32_precision": true
+    },
+    {
+      "scope": "Identical upstream inputs, native LGA core; no registration evaluation",
+      "cache": "<generated-fixtures>/case2/LST_lga_rmFLAIR.mat",
+      "reference": "<generated-fixtures>/case2/ples_lga_0.4_rmFLAIR.nii",
+      "kappa": 0.4,
+      "phi": 1.2,
+      "max_iter": 25,
+      "python_probability_ml": 0.545,
+      "matlab_probability_ml": 0.545,
+      "python_binary_ml": 0.545,
+      "matlab_binary_ml": 0.545,
+      "dice": 1.0,
+      "binary_disagreement_voxels": 0,
+      "maximum_absolute_probability_error": 0.0,
+      "mean_absolute_probability_error": 0.0,
+      "fixture": "independent synthetic case2",
+      "maximum_p0_label_error": 0.0,
+      "matches_reference_at_float32_precision": true
+    }
+  ],
+  "different_fast_fsl_inputs": [
+    {
+      "scope": "Different FAST/FSL native inputs, no registration evaluation or parameter fitting",
+      "case": "comparison_test",
+      "python_probability_ml": 21.10137038711727,
+      "matlab_probability_ml": 16.656004120789405,
+      "dice": 0.8119112073632918
+    },
+    {
+      "scope": "Different FAST/FSL native inputs, no registration evaluation or parameter fitting",
+      "case": "comparison_test_MRNE066",
+      "python_probability_ml": 1.4203434750097632,
+      "matlab_probability_ml": 2.4241334168007187,
+      "dice": 0.5587044534412956
+    }
+  ],
+  "fixed_prior_input_ablation": [
+    {
+      "case": "comparison_test",
+      "change": "FAST_label_only",
+      "fixed_prior": "Original native LST prior, no spatial transformations or registration evaluation",
+      "python_probability_ml": 16.366519349308106,
+      "reference_probability_ml": 16.656004120789405,
+      "dice": 0.9424888448190382
+    },
+    {
+      "case": "comparison_test",
+      "change": "FSL_flair_only",
+      "fixed_prior": "Original native LST prior, no spatial transformations or registration evaluation",
+      "python_probability_ml": 19.821027770294396,
+      "reference_probability_ml": 16.656004120789405,
+      "dice": 0.8423941965661149
+    },
+    {
+      "case": "comparison_test_MRNE066",
+      "change": "FAST_label_only",
+      "fixed_prior": "Original native LST prior, no spatial transformations or registration evaluation",
+      "python_probability_ml": 1.6848073202231248,
+      "reference_probability_ml": 2.4241334168007187,
+      "dice": 0.8131812420785804
+    },
+    {
+      "case": "comparison_test_MRNE066",
+      "change": "FSL_flair_only",
+      "fixed_prior": "Original native LST prior, no spatial transformations or registration evaluation",
+      "python_probability_ml": 453.30108877176986,
+      "reference_probability_ml": 2.4241334168007187,
+      "dice": 0.010288823887115888
+    }
+  ],
+  "ablation_note": "Counterfactual input substitutions; not outputs of a supported production pipeline and not isolated registration or bias-correction measurements."
+}

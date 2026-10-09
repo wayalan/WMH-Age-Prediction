@@ -1,0 +1,21 @@
+{
+  "pdf_pages": 8,
+  "all_pdf_pages_visually_inspected": true,
+  "pdf_text_extractable": true,
+  "expected_image_counts_by_page": [
+    1,
+    2,
+    1,
+    1,
+    1,
+    1,
+    2,
+    0
+  ],
+  "browser_errors": 0,
+  "mri_assets_loaded": 6,
+  "desktop_and_narrow_layout_checked": true,
+  "image_zoom_control_checked": true,
+  "measurements_recomputed_independently": true,
+  "input_output_hashes_rechecked": true
+}

@@ -1,0 +1,305 @@
+{
+  "tested_at_utc": "2026-10-09T01:41:26.695889+00:00",
+  "algorithm_version": "lst-lga-native-2",
+  "code_sha256": "09c51dc5b292045c8a262b7319f3ed3265a45f0bfb79190d87a29df6cb60f1e5",
+  "environment": {
+    "python": "3.10.10",
+    "numpy": "1.26.4",
+    "scipy": "1.15.3",
+    "nibabel": "5.3.2",
+    "fsl": "6.0.6.4"
+  },
+  "scope": "Native WMH segmentation. No registration estimation or evaluation.",
+  "reference_status": "Existing original MATLAB LST native probability maps, not newly rerun SPM preprocessing",
+  "parameters": {
+    "kappa": 0.3,
+    "phi": 1,
+    "max_iter": 50,
+    "binary_threshold": 0.5
+  },
+  "cases": [
+    {
+      "case": "MRNE085",
+      "source_directory": "comparison_test",
+      "matlab_probability_ml": 16.656004120789405,
+      "python_probability_ml": 21.101416923588292,
+      "probability_difference_ml": 4.445412802798888,
+      "probability_relative_difference_pct": 26.6895515308518,
+      "matlab_binary_ml": 16.285964083313942,
+      "python_binary_ml": 20.654,
+      "dice": 0.8119112073632918,
+      "jaccard": 0.6833758658403208,
+      "matlab_coverage": 0.9207908633181874,
+      "python_overlap_fraction": 0.7260579064587973,
+      "intersection_voxels": 14996,
+      "matlab_only_voxels": 1290,
+      "python_only_voxels": 5658,
+      "matlab_binary_voxels": 16286,
+      "python_binary_voxels": 20654,
+      "matlab_components_6_connected": 47,
+      "python_components_6_connected": 41,
+      "shape": [
+        192,
+        256,
+        176
+      ],
+      "native_spacing_mm": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "same_native_grid": true,
+      "flair_background": "comparison_test/python_out/rmFLAIR.nii.gz",
+      "python_map": "reports/2026-10-09_native_comparison/data/native/MRNE085/python_ples_native.nii.gz",
+      "matlab_map": "comparison_test/matlab_out/ples_lga_0.3_rmT2f.nii",
+      "brain_mask": "comparison_test/python_out/T1_brain_mask.nii.gz",
+      "input_identity": {
+        "t1": {
+          "identical_raw_voxels": true,
+          "shape": [
+            192,
+            256,
+            176
+          ],
+          "spacing_mm": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "flair": {
+          "identical_raw_voxels": true,
+          "shape": [
+            320,
+            320,
+            42
+          ],
+          "spacing_mm": [
+            0.6875,
+            0.6875,
+            3.0
+          ]
+        }
+      },
+      "sources": [
+        {
+          "role": "raw_t1_matlab",
+          "path": "comparison_test/matlab_out/T1w.nii",
+          "sha256": "2fed9adf1db2e514ab9d40e243cc8481b91b4fe9bb6d8abf76dc5dab7145c919"
+        },
+        {
+          "role": "raw_t1_python",
+          "path": "comparison_test/python_out/T1_raw.nii.gz",
+          "sha256": "0d7735561556b3996bbdde7204aaad1ae844cf3afe067a159726616ed205ebb1"
+        },
+        {
+          "role": "raw_flair_matlab",
+          "path": "comparison_test/matlab_out/T2f.nii",
+          "sha256": "c0398d54812dd487d4a19b94b79af38bb6fc00c26635bc19a0e3d9fcffa767d1"
+        },
+        {
+          "role": "raw_flair_python",
+          "path": "comparison_test/python_out/FLAIR_raw.nii.gz",
+          "sha256": "7e79c743be7d939506859b4fc22886357f2b9b0bfcd8bb345bc309440524a381"
+        },
+        {
+          "role": "t1_brain",
+          "path": "comparison_test/python_out/T1_brain.nii.gz",
+          "sha256": "02530724ee6fb5e5742d11b9830305d4c98e6010c209e4d43e8a61b9c3b436c7"
+        },
+        {
+          "role": "brain_mask",
+          "path": "comparison_test/python_out/T1_brain_mask.nii.gz",
+          "sha256": "cfed063ac34673a6932e3241faf09630aa30e41064349434b5d960a4ac50d9ec"
+        },
+        {
+          "role": "flair",
+          "path": "comparison_test/python_out/rmFLAIR.nii.gz",
+          "sha256": "2850118005dfb8ec3662f80e005fda59ba72f87ede9226df6ed99b072d07ef54"
+        },
+        {
+          "role": "atlas_wm",
+          "path": "comparison_test/python_out/watlas_wm.nii.gz",
+          "sha256": "ef881b877767e9620e3ae7b974267c7c477960aa68592f7e84874a6cb429a9a4"
+        },
+        {
+          "role": "noles",
+          "path": "comparison_test/python_out/wnoles.nii.gz",
+          "sha256": "7d403a5ea5d8cd1ae4380f3d175bbb6ed20760e468bbe036155ae1f4567b0d1f"
+        },
+        {
+          "role": "pve_csf",
+          "path": "reports/2026-10-09_native_comparison/data/native/MRNE085/fast/T1_pve_0.nii.gz",
+          "sha256": "95c34b76bd1f9f8d3a558e5ef3b9a2dfb4f7d5d4dd43dca0af2684fb08f3b5c9"
+        },
+        {
+          "role": "pve_gm",
+          "path": "reports/2026-10-09_native_comparison/data/native/MRNE085/fast/T1_pve_1.nii.gz",
+          "sha256": "421563d17bcaa54bb5e9bea17d8cd921853570430e70e964fd2c6a9959aac2cb"
+        },
+        {
+          "role": "pve_wm",
+          "path": "reports/2026-10-09_native_comparison/data/native/MRNE085/fast/T1_pve_2.nii.gz",
+          "sha256": "397f8f9cd36e983f30cfaad025c123a2e7fe58a4d71ab0ad1ee4c4a6a59a344f"
+        },
+        {
+          "role": "t1_corrected",
+          "path": "reports/2026-10-09_native_comparison/data/native/MRNE085/fast/T1_restore.nii.gz",
+          "sha256": "30c934163fbfb2eeb9c9c2a7335c0255e6ad77f7fe4d052d92efd8a045d642f4"
+        },
+        {
+          "role": "matlab_reference",
+          "path": "comparison_test/matlab_out/ples_lga_0.3_rmT2f.nii",
+          "sha256": "0dad191092b61d19729df81e80607273d6b197b80dda29155b7d4acef183f97a"
+        },
+        {
+          "role": "python_result",
+          "path": "reports/2026-10-09_native_comparison/data/native/MRNE085/python_ples_native.nii.gz",
+          "sha256": "90be630944d021d8bc2bc3b07a60ccd51c371c0730d01313116c4a2be77768de"
+        }
+      ]
+    },
+    {
+      "case": "MRNE066",
+      "source_directory": "comparison_test_MRNE066",
+      "matlab_probability_ml": 2.4241334168007187,
+      "python_probability_ml": 1.42034364432792,
+      "probability_difference_ml": -1.0037897724727987,
+      "probability_relative_difference_pct": -41.40819005735927,
+      "matlab_binary_ml": 2.3219997231960297,
+      "python_binary_ml": 1.383,
+      "dice": 0.5587044534412956,
+      "jaccard": 0.38764044943820225,
+      "matlab_coverage": 0.44573643410852715,
+      "python_overlap_fraction": 0.7483731019522777,
+      "intersection_voxels": 1035,
+      "matlab_only_voxels": 1287,
+      "python_only_voxels": 348,
+      "matlab_binary_voxels": 2322,
+      "python_binary_voxels": 1383,
+      "matlab_components_6_connected": 48,
+      "python_components_6_connected": 24,
+      "shape": [
+        192,
+        256,
+        176
+      ],
+      "native_spacing_mm": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "same_native_grid": true,
+      "flair_background": "comparison_test_MRNE066/python_out/rmFLAIR.nii.gz",
+      "python_map": "reports/2026-10-09_native_comparison/data/native/MRNE066/python_ples_native.nii.gz",
+      "matlab_map": "comparison_test_MRNE066/matlab_out/ples_lga_0.3_rmT2f.nii",
+      "brain_mask": "comparison_test_MRNE066/python_out/T1_brain_mask.nii.gz",
+      "input_identity": {
+        "t1": {
+          "identical_raw_voxels": true,
+          "shape": [
+            192,
+            256,
+            176
+          ],
+          "spacing_mm": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "flair": {
+          "identical_raw_voxels": true,
+          "shape": [
+            320,
+            320,
+            42
+          ],
+          "spacing_mm": [
+            0.6875,
+            0.6875,
+            3.0
+          ]
+        }
+      },
+      "sources": [
+        {
+          "role": "raw_t1_matlab",
+          "path": "comparison_test_MRNE066/matlab_out/T1w.nii",
+          "sha256": "48a7b8199c3a16466a030635b323495379bc32c5a607c73e013c91ce40446fe7"
+        },
+        {
+          "role": "raw_t1_python",
+          "path": "comparison_test_MRNE066/python_out/T1_raw.nii.gz",
+          "sha256": "4c9594065faae26e3e4fc35902e8151e7c1ed2058c365d3807360f2f4e7853c4"
+        },
+        {
+          "role": "raw_flair_matlab",
+          "path": "comparison_test_MRNE066/matlab_out/T2f.nii",
+          "sha256": "d0198ea25f9514fb47cda01cbcc3bceef9a2f9779a1923b7f4f8d8b11f7f70c4"
+        },
+        {
+          "role": "raw_flair_python",
+          "path": "comparison_test_MRNE066/python_out/FLAIR_raw.nii.gz",
+          "sha256": "c3e9d5a630925f7d4a81c23322ee16e48e2f1a4479cfa52509d28d9aa64db5f3"
+        },
+        {
+          "role": "t1_brain",
+          "path": "comparison_test_MRNE066/python_out/T1_brain.nii.gz",
+          "sha256": "096e9b1d3b9ba546ad352eab7b8df6dd1b961e97f370affaafbd91a2c1157208"
+        },
+        {
+          "role": "brain_mask",
+          "path": "comparison_test_MRNE066/python_out/T1_brain_mask.nii.gz",
+          "sha256": "21a138f6554af817c256f8aaa794d89e0b0d1e8b4910cf4863cf43a8fc76cd36"
+        },
+        {
+          "role": "flair",
+          "path": "comparison_test_MRNE066/python_out/rmFLAIR.nii.gz",
+          "sha256": "18b2d4c2860ceca56e35c977c8be41f0151da274884cda8c29f4a08402fe312e"
+        },
+        {
+          "role": "atlas_wm",
+          "path": "comparison_test_MRNE066/python_out/watlas_wm.nii.gz",
+          "sha256": "dfd94e62aacb05ca021455ebaf359babb19b6cc33f56ef0ae12e2086237f0c02"
+        },
+        {
+          "role": "noles",
+          "path": "comparison_test_MRNE066/python_out/wnoles.nii.gz",
+          "sha256": "737888c23e5884256e19d79b2e08c255ef313d8fcf07f554c56e6319ab871858"
+        },
+        {
+          "role": "pve_csf",
+          "path": "reports/2026-10-09_native_comparison/data/native/MRNE066/fast/T1_pve_0.nii.gz",
+          "sha256": "bf67a5af4a3451c44242065a607a2dbe16f82ef19b142f063a9c5ecd8b84025d"
+        },
+        {
+          "role": "pve_gm",
+          "path": "reports/2026-10-09_native_comparison/data/native/MRNE066/fast/T1_pve_1.nii.gz",
+          "sha256": "3c02040904f8f4e6faedac59a01d3d0c901396d1637599081e06234d67dff24c"
+        },
+        {
+          "role": "pve_wm",
+          "path": "reports/2026-10-09_native_comparison/data/native/MRNE066/fast/T1_pve_2.nii.gz",
+          "sha256": "c90096e1c4cb737a5931b1273194495b2ff48803caee3e503fb35ba749adeb36"
+        },
+        {
+          "role": "t1_corrected",
+          "path": "reports/2026-10-09_native_comparison/data/native/MRNE066/fast/T1_restore.nii.gz",
+          "sha256": "9f178dba097d010d3aa153740d15410f20b8436d4e66e3ce2d63c0cd5617557a"
+        },
+        {
+          "role": "matlab_reference",
+          "path": "comparison_test_MRNE066/matlab_out/ples_lga_0.3_rmT2f.nii",
+          "sha256": "1eed245513081fb12ec38a7cba4d6b73bb958793c9275429b9b1798fd70bfe1c"
+        },
+        {
+          "role": "python_result",
+          "path": "reports/2026-10-09_native_comparison/data/native/MRNE066/python_ples_native.nii.gz",
+          "sha256": "8be62396cc1416b39221ccfccf80d908c27d6a76840c09b64838e2150cda09c7"
+        }
+      ]
+    }
+  ],
+  "path_base": "pipeline_root"
+}
