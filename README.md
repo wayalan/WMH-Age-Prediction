@@ -116,36 +116,21 @@ If you require exact legacy SPM12/LST execution without launching the MATLAB GUI
 
 ---
 
-## Segmentation Validation & Visual Comparison
+## Segmentation Examples
 
-### Actual native-space comparison (2026-10-09)
+The following figures show two real-data examples comparing the MATLAB LST and Python results.
 
-The current Python pipeline was tested on the existing MRNE085 and MRNE066 examples, with **its own FAST tissue maps and native FLAIR inputs**. MATLAB references are the existing original LST native outputs. Python does not consume MATLAB tissue labels or reference lesions during segmentation. Registration was neither rerun nor evaluated.
+From left to right: FLAIR background, MATLAB LST segmentation, Python segmentation, and overlap/differences. In the last column, blue indicates MATLAB-only regions, orange Python-only regions, and white overlap.
 
-| Case | MATLAB probability volume (ml) | Python probability volume (ml) | Relative difference | Binary Dice |
-|---|---:|---:|---:|---:|
-| MRNE085 | 16.656 | 21.101 | +26.7% | 0.812 |
-| MRNE066 | 2.424 | 1.420 | -41.4% | 0.559 |
+**Example 1**
 
-Probability volumes sum the continuous maps; binary comparisons use a strict threshold of **> 0.5**. These two cases show that the default FAST/FSL pipeline is not yet equivalent to the complete MATLAB pipeline.
+![WMH segmentation comparison: Example 1](docs/images/example_1_wmh_comparison.png)
 
-![Native WMH probability volume comparison](reports/2026-10-09_native_comparison/images/volume-chart.png)
+**Example 2**
 
-**MRI examples:** left to right, common FLAIR background, MATLAB mask, current Python mask, and disagreement overlay. In the disagreement column, blue is MATLAB-only, orange is Python-only, and white is overlap. Slice selection is automatic and recorded in the report.
+![WMH segmentation comparison: Example 2](docs/images/example_2_wmh_comparison.png)
 
-![MRNE085 native WMH segmentation comparison](reports/2026-10-09_native_comparison/images/MRNE085_overview_2.png)
-
-![MRNE066 native WMH segmentation comparison](reports/2026-10-09_native_comparison/images/MRNE066_overview_2.png)
-
-[Eight-page illustrated test report](reports/2026-10-09_native_comparison/WMH_native_comparison_2026-10-09.pdf) · [Full-precision metrics](reports/2026-10-09_native_comparison/data/metrics.csv) · [All slice metrics](reports/2026-10-09_native_comparison/data/per_slice_metrics.csv) · [Methods and reproduction](reports/2026-10-09_native_comparison/README.md)
-
-### Numerical validation of the LGA core
-
-With identical upstream LST inputs, the port reproduces both example probability maps exactly (Dice 1.0). Three independent synthetic cases also match the original MATLAB labels and float32 probability outputs. This validates the native growth equations; it is a separate experiment from the independent FAST/FSL results above. See [the validation details](docs/native_lga_validation.md).
-
-```bash
-python3 -m unittest discover -s tests -v
-```
+[Detailed test report](reports/2026-10-09_native_comparison/WMH_native_comparison_2026-10-09.pdf) · [Numerical validation](docs/native_lga_validation.md)
 
 ---
 

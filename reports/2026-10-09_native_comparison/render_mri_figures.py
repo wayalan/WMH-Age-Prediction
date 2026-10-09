@@ -106,6 +106,8 @@ def main():
     parser.add_argument('--metrics', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--pipeline-root', type=Path, default=Path(__file__).resolve().parents[2])
+    parser.add_argument('--example-labels', action='store_true',
+                        help='Use generic example titles and filenames; retain case provenance in metadata')
     args = parser.parse_args()
     evidence = json.loads(args.metrics.read_text())
     args.output.mkdir(parents=True, exist_ok=True)
@@ -113,7 +115,9 @@ def main():
     def resolve(path):
         value = Path(path)
         return value if value.is_absolute() else args.pipeline_root / value
-    for record in evidence['cases']:
+    for example_index, record in enumerate(evidence['cases'], 1):
+        display_label = f'Example {example_index}' if args.example_labels else record['case']
+        stem = f'example_{example_index}' if args.example_labels else record['case']
         reference = nib.load(resolve(record['matlab_map'])).get_fdata() > 0.5
         python = nib.load(resolve(record['python_map'])).get_fdata() > 0.5
         flair_img = nib.load(resolve(record['flair_background']))
@@ -131,8 +135,9 @@ def main():
         slices = select_slices(reference, python)
         for part in range(2):
             selected = slices[part * 3:(part + 1) * 3]
-            path = args.output / f'{record["case"]}_overview_{part + 1}.png'
-            draw_sheet(record['case'], background, reference, python, selected, box, path,
+            path = args.output / f'{stem}_overview_{part + 1}.png'
+            draw_sheet(display_label, background, reference, python, selected, box, path,
+                       'WMH segmentation comparison' if args.example_labels else
                        f'Native axial comparison {part + 1}/2')
             selections.append({'case': record['case'], 'figure': path.name, 'slices': selected,
                 'selection_rule': 'Four evenly spaced lesion-containing slices, peak union burden and peak disagreement; fill duplicates with evenly spaced remaining slices',
@@ -146,8 +151,8 @@ def main():
         center = tuple(map(int, np.unravel_index(np.argmax(score), score.shape)))
         zoom = (max(0, center[0] - 24), min(flair.shape[0], center[0] + 24),
                 max(0, center[1] - 24), min(flair.shape[1], center[1] + 24))
-        path = args.output / f'{record["case"]}_detail.png'
-        draw_sheet(record['case'], background, reference, python, [z], zoom, path,
+        path = args.output / f'{stem}_detail.png'
+        draw_sheet(display_label, background, reference, python, [z], zoom, path,
                    'Largest disagreement slice: automatic detail crop')
         selections.append({'case': record['case'], 'figure': path.name, 'slices': [z],
             'selection_rule': 'Largest disagreement slice; 48x48 crop centered on highest 40x40 local disagreement density',
