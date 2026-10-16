@@ -110,14 +110,22 @@ class NativeLGATests(unittest.TestCase):
                  contextlib.redirect_stdout(io.StringIO()):
                 # Existing coregistration must include its matrix file.
                 (root / 'flair2t1.mat').write_text('unused cached transform')
-                run_pipeline(t1_path=str(root / 'T1_raw.nii.gz'),
+                results = run_pipeline(t1_path=str(root / 'T1_raw.nii.gz'),
                     flair_path=str(root / 'FLAIR_raw.nii.gz'), outdir=str(root), skip_qc=True)
+                expected_tiv = np.prod(shape) / 1000
+                self.assertAlmostEqual(results['GMV_cc'], expected_tiv * .8)
+                self.assertAlmostEqual(results['WMV_cc'], expected_tiv * .1)
+                self.assertAlmostEqual(results['CSFV_cc'], expected_tiv * .1)
+                self.assertAlmostEqual(results['TIV_cc'], expected_tiv)
+                exported = json.loads((root / 'WMH_Age_Results.json').read_text())
+                self.assertEqual(exported['GMV_cc'], results['GMV_cc'])
                 self.assertEqual(nib.load(root / 'ples_lga_k30.nii.gz').header.get_data_dtype(), np.dtype('float32'))
                 self.assertEqual(nib.load(root / 'bles_lga_k30.nii.gz').header.get_data_dtype(), np.dtype('uint8'))
                 self.assertTrue((root / 'lga_k30_inputs.json').exists())
                 with patch('pywmh_tool.segment_wmh_lga', side_effect=AssertionError('Validated cache should be reused')):
-                    run_pipeline(t1_path=str(root / 'T1_raw.nii.gz'),
+                    repeated = run_pipeline(t1_path=str(root / 'T1_raw.nii.gz'),
                         flair_path=str(root / 'FLAIR_raw.nii.gz'), outdir=str(root), skip_qc=True)
+                    self.assertEqual(repeated['TIV_cc'], results['TIV_cc'])
 
 
 if __name__ == '__main__':

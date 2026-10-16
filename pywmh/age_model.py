@@ -21,6 +21,41 @@ def get_voxel_volume_cc(nii_img: nib.Nifti1Image) -> float:
     return voxel_mm3 / 1000.0
 
 
+def calculate_tissue_volumes(
+    gm_img: nib.Nifti1Image,
+    wm_img: nib.Nifti1Image,
+    csf_img: nib.Nifti1Image
+) -> Dict[str, Any]:
+    """Integrate native FAST partial-volume fractions without thresholding.
+
+    TIV is the sum of the three tissues within the BET-extracted FAST input;
+    it is an estimate, not a separate whole-intracranial cavity segmentation.
+    NIfTI images with unspecified spatial units follow FSL's mm convention.
+    """
+    volumes = {}
+    reference_units = gm_img.header.get_xyzt_units()[0]
+    mm_per_unit = {"unknown": 1.0, "mm": 1.0, "meter": 1000.0, "micron": 0.001}
+    for field, img in (("GMV_cc", gm_img), ("WMV_cc", wm_img), ("CSFV_cc", csf_img)):
+        if (len(img.shape) != 3 or img.shape != gm_img.shape
+                or not np.allclose(img.affine, gm_img.affine, rtol=0, atol=1e-5)
+                or img.header.get_xyzt_units()[0] != reference_units
+                or not np.allclose(img.header.get_zooms()[:3], gm_img.header.get_zooms()[:3])):
+            raise ValueError("Tissue PVE maps must share the same native 3D grid and units.")
+        data = img.get_fdata()
+        if not np.all(np.isfinite(data)) or np.any(data < 0) or np.any(data > 1):
+            raise ValueError(f"{field}: tissue PVE fractions must be finite and in [0, 1].")
+        voxel_cc = get_voxel_volume_cc(img) * mm_per_unit[reference_units] ** 3
+        if not np.isfinite(voxel_cc) or voxel_cc <= 0:
+            raise ValueError("Tissue PVE voxel volume must be finite and positive.")
+        volumes[field] = float(np.sum(data, dtype=np.float64)) * voxel_cc
+    volumes["TIV_cc"] = sum(volumes.values())
+    if volumes["TIV_cc"] <= 0:
+        raise ValueError("Tissue PVE maps contain no tissue; cannot estimate TIV.")
+    volumes["Tissue_Volume_Method"] = "Native FAST PVE integration (BET-extracted T1)"
+    volumes["TIV_Definition"] = "GMV + WMV + CSFV; FAST/BET estimate"
+    return volumes
+
+
 def calculate_wmh_volumes_and_age(
     lesion_img: nib.Nifti1Image,
     pv_mask_img: nib.Nifti1Image,

@@ -10,6 +10,7 @@ import os
 import io
 import base64
 import time
+from html import escape
 from typing import Dict, Any, List, Optional
 import numpy as np
 import nibabel as nib
@@ -179,6 +180,36 @@ def generate_qc_report(
     slices = select_informative_slices(lesion_data, num_slices=12)
     fig_multislice = generate_multi_slice_figure(flair_data, lesion_data, pv_data, dw_data, slices)
 
+    tissue_labels = (("GMV", "Grey matter"), ("WMV", "White matter"),
+                     ("CSFV", "Cerebrospinal fluid"), ("TIV", "Estimated intracranial volume"))
+    tissue_cards = []
+    tissue_summary = []
+    for label, description in tissue_labels:
+        value = results.get(f"{label}_cc")
+        display = f"{value:.2f}" if value is not None else "Not computed"
+        unit = '<span class="metric-unit">mL</span>' if value is not None else ""
+        tissue_cards.append(f"""
+        <div class="metric-card">
+            <div class="metric-title">{label} · {description}</div>
+            <div class="metric-value">{display} {unit}</div>
+        </div>""")
+        tissue_summary.append(f"{label}: {value:.2f} mL" if value is not None else f"{label}: N/A")
+    method = escape(results.get("Tissue_Volume_Method", "Tissue segmentation method not recorded."))
+    tissue_html = f"""
+    <div class="section-card">
+        <div class="section-title">Brain Tissue Volumes</div>
+        <div class="grid-metrics">{''.join(tissue_cards)}</div>
+        <div class="metric-sub">{method}. Volumes are in mL (= cc).</div>
+        <div class="metric-sub">TIV = GMV + WMV + CSFV. The FAST/BET estimate covers the brain-extracted input and depends on extraction coverage; it is not a separate whole-intracranial cavity measurement. Missing tissue maps are reported as not computed.</div>
+    </div>"""
+
+    # Include the same tissue measurements in the standalone QC thumbnail.
+    fig_multislice.axes[0].get_gridspec().update(bottom=0.14)
+    fig_multislice.text(0.5, 0.065, "  |  ".join(tissue_summary),
+                        ha="center", color="#e4e4e7", fontsize=12)
+    fig_multislice.text(0.5, 0.025, "TIV = GMV + WMV + CSFV (tissue-sum estimate)",
+                        ha="center", color="#a1a1aa", fontsize=10)
+
     # Save standalone summary PNG
     fig_multislice.savefig(out_png, dpi=150, bbox_inches="tight", facecolor="#18181b")
     b64_multislice = _img_to_base64(fig_multislice)
@@ -216,7 +247,7 @@ def generate_qc_report(
         """
 
     tiv_html = ""
-    if tiv_cc is not None:
+    if tiv_cc is not None and wmh_pct_tiv is not None:
         tiv_html = f"""
         <div class="metric-card">
             <div class="metric-title">Normalized Burden (% TIV)</div>
@@ -432,6 +463,8 @@ def generate_qc_report(
         </div>
         {tiv_html}
     </div>
+
+    {tissue_html}
 
     <!-- Axial Multi-Slice Segmentation View -->
     <div class="section-card">

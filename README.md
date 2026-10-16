@@ -86,9 +86,9 @@ python pywmh_tool.py \
 - Configure the FSL installation through `$FSLDIR` and ensure its commands are on `$PATH`.
 
 ### Outputs
-- `WMH_Age_QC_Report.html`: Self-contained, interactive HTML report with embedded high-resolution graphics, metrics tables, and registration sanity checks.
-- `qc_summary.png`: Multi-slice thumbnail snapshot for rapid Finder / Explorer review.
-- `WMH_Age_Results.csv`: Extended summary table with Total WMH, PVWMH, DWMH, TIV, % TIV, Predicted Age, Brain Age Gap, Lobar WMH (Frontal, Parietal, Temporal, Occipital, Subcortical), and Arterial Vascular WMH (ACA, MCA, PCA, VB).
+- `WMH_Age_QC_Report.html`: Self-contained HTML report with embedded high-resolution graphics, metrics tables, GMV / WMV / CSFV / estimated TIV, and registration sanity checks.
+- `qc_summary.png`: Multi-slice thumbnail snapshot with tissue volumes for rapid Finder / Explorer review.
+- `WMH_Age_Results.csv`: Extended summary table with Total WMH, PVWMH, DWMH, GMV, WMV, CSFV, estimated TIV, % TIV, Predicted Age, Brain Age Gap, Lobar WMH (Frontal, Parietal, Temporal, Occipital, Subcortical), and Arterial Vascular WMH (ACA, MCA, PCA, VB).
 - `WMH_Age_Results.json`: Comprehensive machine-readable quantification results.
 - `bles_lga_k30.nii.gz`: Native-space binary WMH lesion mask.
 - `ples_lga_k30.nii.gz`: Native-space lesion probability map.
@@ -97,6 +97,8 @@ python pywmh_tool.py \
 - `native_lobar.nii.gz`: Native-space cerebral lobar parcellation.
 - `native_arterial.nii.gz`: Native-space arterial vascular territory parcellation.
 - `rmFLAIR.nii.gz`: Rigidly co-registered FLAIR aligned to T1.
+
+Tissue volumes are saved as `GMV_cc`, `WMV_cc`, `CSFV_cc`, and `TIV_cc` (1 cc = 1 mL). Each tissue volume is the sum of its native-space FAST partial-volume fractions multiplied by voxel volume, without binary thresholding, following [FSL's tissue volume quantification guidance](https://fsl.fmrib.ox.ac.uk/fsl/docs/structural/fast.html#tissue-volume-quantification). `TIV_cc = GMV_cc + WMV_cc + CSFV_cc`. This is an estimate over the BET-extracted input, so it depends on brain extraction coverage and is not a separate whole-intracranial cavity measurement or an SPM/CAT TIV equivalent. The CSV and JSON also record the calculation method. Lesion-only input (`--lesion`) cannot provide tissue volumes: these fields are empty in CSV and `null` in JSON. Re-running the full pipeline in an existing output directory refreshes results and QC from cached tissue maps.
 
 ---
 

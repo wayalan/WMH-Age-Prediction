@@ -43,6 +43,7 @@ from pywmh.fsl_engine import (
 )
 from pywmh.lst_lga import ALGORITHM_VERSION, segment_wmh_lga
 from pywmh.age_model import (
+    calculate_tissue_volumes,
     calculate_wmh_volumes_and_age,
     calculate_regional_breakdown,
     save_results
@@ -136,6 +137,8 @@ def run_pipeline(
             subject_id=subj,
             chronological_age=chronological_age
         )
+        res.update(dict.fromkeys(("GMV_cc", "WMV_cc", "CSFV_cc", "TIV_cc")))
+        res["Tissue_Volume_Method"] = "Not computed: lesion-only input has no tissue PVE maps"
 
         lobar_img = nib.load(lobar_atlas) if os.path.exists(lobar_atlas) else None
         art_img = nib.load(arterial_atlas) if os.path.exists(arterial_atlas) else None
@@ -286,14 +289,14 @@ def run_pipeline(
 
     gm_img = nib.load(pve_maps["pve_gm"])
     gm_data = gm_img.get_fdata()
-    wm_data = nib.load(pve_maps["pve_wm"]).get_fdata()
-    csf_data = nib.load(pve_maps["pve_csf"]).get_fdata()
+    wm_img = nib.load(pve_maps["pve_wm"])
+    csf_img = nib.load(pve_maps["pve_csf"])
+    wm_data = wm_img.get_fdata()
+    csf_data = csf_img.get_fdata()
     brain_mask_data = nib.load(t1_brain_mask).get_fdata() > 0
     t1_corrected_data = nib.load(pve_maps["t1_corrected"]).get_fdata()
 
-    # Calculate Total Intracranial Volume (TIV) from FAST PVE maps
-    voxel_vol_cc = float(np.prod(gm_img.header.get_zooms()[:3])) / 1000.0
-    tiv_cc = float(np.sum(gm_data + wm_data + csf_data)) * voxel_vol_cc
+    tissue_volumes = calculate_tissue_volumes(gm_img, wm_img, csf_img)
 
     watlas_wm_data = nib.load(native_atlas_wm_path).get_fdata()
     wnoles_data = nib.load(native_noles_path).get_fdata() > 0
@@ -349,8 +352,9 @@ def run_pipeline(
         dw_mask_img=dw_mask_img,
         subject_id=subject_id,
         chronological_age=chronological_age,
-        tiv_cc=tiv_cc
+        tiv_cc=tissue_volumes["TIV_cc"]
     )
+    results.update(tissue_volumes)
 
     # Calculate Regional Lobar & Arterial Breakdown
     lobar_img = nib.load(native_lobar_path) if os.path.exists(native_lobar_path) else None
@@ -387,6 +391,8 @@ def run_pipeline(
     print(f" Total WMH Volume : {results['Total_WMH_cc']:.3f} cc ({results.get('Total_WMH_pct_TIV', 0):.3f}% TIV)")
     print(f" PVWMH Volume     : {results['PVWMH_cc']:.3f} cc")
     print(f" DWMH Volume      : {results['DWMH_cc']:.3f} cc")
+    for label in ("GMV", "WMV", "CSFV", "TIV"):
+        print(f" {label:<16}: {results[label + '_cc']:.3f} cc")
     print(f" Predicted WMH-Age: {results['Predicted_Age']:.2f} years old")
     if chronological_age is not None:
         print(f" Chronological Age: {results['Chronological_Age']:.2f} years old")
