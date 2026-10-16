@@ -49,6 +49,7 @@ from pywmh.age_model import (
     save_results
 )
 from pywmh.qc_report import generate_qc_report
+from pywmh.preprocessing import correct_flair_bias
 
 
 def find_dicom_subfolders(dcm_root: str):
@@ -211,6 +212,13 @@ def run_pipeline(
     else:
         brain_extract(t1_path, t1_brain)
 
+    # Original LST corrects FLAIR as well as T1. Correct the acquisition-space
+    # image before resampling, retaining the existing rigid transform.
+    print("\n[FLAIR] Correcting acquisition-space intensity bias before LGA...")
+    corrected_flair = correct_flair_bias(
+        flair_path, t1_path, t1_brain_mask, flair2t1_mat,
+        os.path.join(outdir, "flair_bias"), force=force)
+
     # 5. Tissue Segmentation (FAST)
     print("\n[Step 3/5] Segmenting T1 brain tissues (FAST)...")
     fast_base = os.path.join(outdir, "fast", "T1")
@@ -284,7 +292,7 @@ def run_pipeline(
 
     # 7. Native WMH segmentation with the original LST-LGA equations
     print(f"\n[Step 5/5] Running native Python LST-LGA segmentation (kappa={kappa:.2f})...")
-    flair_img = nib.load(flair_coreg)
+    flair_img = nib.load(corrected_flair)
     flair_data = flair_img.get_fdata()
 
     gm_img = nib.load(pve_maps["pve_gm"])
@@ -305,7 +313,7 @@ def run_pipeline(
     bles_native_path = os.path.join(outdir, f"bles_lga_k{int(kappa*100):02d}.nii.gz")
     metadata_path = os.path.join(outdir, f"lga_k{int(kappa*100):02d}_inputs.json")
     signature = segmentation_signature({
-        **pve_maps, "flair": flair_coreg, "brain_mask": t1_brain_mask,
+        **pve_maps, "flair": corrected_flair, "brain_mask": t1_brain_mask,
         "atlas_wm": native_atlas_wm_path, "noles": native_noles_path,
     }, kappa)
 
@@ -355,6 +363,7 @@ def run_pipeline(
         tiv_cc=tissue_volumes["TIV_cc"]
     )
     results.update(tissue_volumes)
+    results["FLAIR_Preprocessing"] = "Acquisition-space FAST T2 bias correction; existing rigid transform"
 
     # Calculate Regional Lobar & Arterial Breakdown
     lobar_img = nib.load(native_lobar_path) if os.path.exists(native_lobar_path) else None
@@ -373,7 +382,7 @@ def run_pipeline(
         qc_html = os.path.join(outdir, "WMH_Age_QC_Report.html")
         qc_png = os.path.join(outdir, "qc_summary.png")
         generate_qc_report(
-            flair_path=flair_coreg,
+            flair_path=corrected_flair,
             t1_path=t1_brain,
             lesion_prob_path=ples_native_path,
             pv_mask_path=native_pv_path,

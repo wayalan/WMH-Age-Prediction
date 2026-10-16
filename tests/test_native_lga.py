@@ -105,6 +105,7 @@ class NativeLGATests(unittest.TestCase):
             for name in ('t1_to_mni_affine', 'mni_to_t1_affine'):
                 (root / 'registration' / f'{name}.mat').write_text('unused cached transform')
             with patch('pywmh_tool.check_fsl_installed', return_value='/unused'), \
+                 patch('pywmh_tool.correct_flair_bias', return_value=str(root / 'rmFLAIR.nii.gz')) as correction, \
                  patch('pywmh_tool.register_t1_to_mni', side_effect=AssertionError('No registration in native test')), \
                  patch('pywmh_tool.coregister_flair_to_t1', side_effect=AssertionError('No coregistration in native test')), \
                  contextlib.redirect_stdout(io.StringIO()):
@@ -117,6 +118,8 @@ class NativeLGATests(unittest.TestCase):
                 self.assertAlmostEqual(results['WMV_cc'], expected_tiv * .1)
                 self.assertAlmostEqual(results['CSFV_cc'], expected_tiv * .1)
                 self.assertAlmostEqual(results['TIV_cc'], expected_tiv)
+                self.assertEqual(correction.call_args.args[2], str(root / 'T1_brain_mask.nii.gz'))
+                self.assertIn('FAST T2', results['FLAIR_Preprocessing'])
                 exported = json.loads((root / 'WMH_Age_Results.json').read_text())
                 self.assertEqual(exported['GMV_cc'], results['GMV_cc'])
                 self.assertEqual(nib.load(root / 'ples_lga_k30.nii.gz').header.get_data_dtype(), np.dtype('float32'))

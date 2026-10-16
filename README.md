@@ -30,6 +30,7 @@ $$
 ### Algorithmic Framework: Native Python LST-LGA
 `pywmh` is built directly upon the algorithmic principles of the **Lesion Growth Algorithm (LGA)** from the [LST toolbox](https://www.applied-statistics.de/lst.html) (Schmidt et al., 2012):
 1. **Tissue Probability Mapping**: FSL FAST estimates Partial Volume Estimation (PVE) maps for CSF, Grey Matter, and White Matter.
+   FLAIR also receives its own FAST T2 bias-field correction in acquisition space before resampling with the existing rigid transform. Correcting T1 alone leaves FLAIR intensity inhomogeneity available to create false lesion seeds.
 2. **FLAIR Normalization**: Original LST unit-width histogram mode, including tied modes.
 3. **Lesion Belief Calculation**: Initial lesion belief maps ($B_{\text{gm}}, B_{\text{wm}}, B_{\text{csf}}$) combine tissue probabilities, contrast differences, and spatial priors.
 4. **Spatial Priors**: Uses the official LST white matter prior (`atlas_wm.nii.gz`) and exclusion mask (`noles.nii.gz`) in native space to restrict lesion belief maps.
@@ -97,8 +98,13 @@ python pywmh_tool.py \
 - `native_lobar.nii.gz`: Native-space cerebral lobar parcellation.
 - `native_arterial.nii.gz`: Native-space arterial vascular territory parcellation.
 - `rmFLAIR.nii.gz`: Rigidly co-registered FLAIR aligned to T1.
+- `flair_bias/FLAIR_corrected.nii.gz`: Bias-corrected FLAIR in its original acquisition space.
+- `flair_bias/rmFLAIR_corrected.nii.gz`: Corrected FLAIR aligned to T1, used for LGA and QC.
+- `flair_bias/correction_inputs.json`: Correction settings, source hashes and corrected-output hashes. Legacy lesion maps are regenerated when the corrected LGA input changes.
 
 Tissue volumes are saved as `GMV_cc`, `WMV_cc`, `CSFV_cc`, and `TIV_cc` (1 cc = 1 mL). Each tissue volume is the sum of its native-space FAST partial-volume fractions multiplied by voxel volume, without binary thresholding, following [FSL's tissue volume quantification guidance](https://fsl.fmrib.ox.ac.uk/fsl/docs/structural/fast.html#tissue-volume-quantification). `TIV_cc = GMV_cc + WMV_cc + CSFV_cc`. This is an estimate over the BET-extracted input, so it depends on brain extraction coverage and is not a separate whole-intracranial cavity measurement or an SPM/CAT TIV equivalent. The CSV and JSON also record the calculation method. Lesion-only input (`--lesion`) cannot provide tissue volumes: these fields are empty in CSV and `null` in JSON. Re-running the full pipeline in an existing output directory refreshes results and QC from cached tissue maps.
+
+The FLAIR correction addresses a missing preprocessing stage; FAST remains an approximation to SPM's intensity correction and tissue segmentation. The complete pipeline is **not yet equivalent to original MATLAB LST**, including on low-lesion-burden scans. See the [FLAIR correction validation and remaining differences](docs/flair_preprocessing_validation.md).
 
 ---
 
