@@ -106,8 +106,13 @@ def run_pipeline(
     subject_id: str = None,
     chronological_age: float = None,
     skip_qc: bool = False,
-    force: bool = False
+    force: bool = False,
+    age_correction: str = "none"
 ):
+    if age_correction not in ("none", "linear-reference-v1"):
+        raise ValueError("Unknown age correction method.")
+    if age_correction != "none" and chronological_age is None:
+        raise ValueError("--age is required for age correction.")
     start_time = time.time()
     os.makedirs(outdir, exist_ok=True)
 
@@ -136,7 +141,8 @@ def run_pipeline(
             pv_mask_img=pv_img,
             dw_mask_img=dw_img,
             subject_id=subj,
-            chronological_age=chronological_age
+            chronological_age=chronological_age,
+            age_correction=age_correction
         )
         res.update(dict.fromkeys(("GMV_cc", "WMV_cc", "CSFV_cc", "TIV_cc")))
         res["Tissue_Volume_Method"] = "Not computed: lesion-only input has no tissue PVE maps"
@@ -150,6 +156,18 @@ def run_pipeline(
         csv_out = os.path.join(outdir, "WMH_Age_Results.csv")
         save_results(combined_res, csv_out, os.path.join(outdir, "WMH_Age_Results.json"))
 
+        if not skip_qc and "Corrected_PAD" in res:
+            from html import escape
+            labels = ["Chronological_Age", "Raw_WMH_Age", "Raw_PAD",
+                      "Corrected_WMH_Age", "Corrected_PAD"]
+            rows = "".join(f"<tr><th>{key.replace('_', ' ')}</th><td>{res[key]:.2f} years</td></tr>" for key in labels)
+            report = ("<!doctype html><html><meta charset='utf-8'><title>WMH Age Summary</title>"
+                      "<body><h1>WMH Age Summary</h1><h2>" + escape(subj) + "</h2><table>" + rows +
+                      "</table><p>linear-reference-v1. Corrected age uses chronological age. "
+                      "Residual age dependence may remain. Lesion-only summary; image QC was not performed.</p></body></html>")
+            with open(os.path.join(outdir, "WMH_Age_Summary.html"), "w") as stream:
+                stream.write(report)
+
         print("\n----------------- Results -----------------")
         print(f"Total WMH Volume  : {res['Total_WMH_cc']:.3f} cc")
         print(f"PVWMH Volume      : {res['PVWMH_cc']:.3f} cc")
@@ -158,6 +176,9 @@ def run_pipeline(
         if chronological_age is not None:
             print(f"Chronological Age : {res['Chronological_Age']:.2f} years old")
             print(f"Brain Age Gap     : {res['Brain_Age_Gap']:+.2f} years")
+        if "Corrected_PAD" in res:
+            print(f"Corrected WMH Age : {res['Corrected_WMH_Age']:.2f} years")
+            print(f"Corrected PAD     : {res['Corrected_PAD']:+.2f} years")
         print(f"Saved results to  : {csv_out}")
         print("-------------------------------------------\n")
         return combined_res
@@ -360,6 +381,7 @@ def run_pipeline(
         dw_mask_img=dw_mask_img,
         subject_id=subject_id,
         chronological_age=chronological_age,
+        age_correction=age_correction,
         tiv_cc=tissue_volumes["TIV_cc"]
     )
     results.update(tissue_volumes)
@@ -406,6 +428,9 @@ def run_pipeline(
     if chronological_age is not None:
         print(f" Chronological Age: {results['Chronological_Age']:.2f} years old")
         print(f" Brain Age Gap    : {results['Brain_Age_Gap']:+.2f} years")
+    if "Corrected_PAD" in results:
+        print(f" Corrected WMH Age: {results['Corrected_WMH_Age']:.2f} years")
+        print(f" Corrected PAD    : {results['Corrected_PAD']:+.2f} years")
     if regional_results:
         print(" Lobar Breakdown  :")
         for l in ["Frontal", "Parietal", "Temporal", "Occipital", "Subcortical"]:
@@ -438,6 +463,7 @@ def main():
     parser.add_argument("-k", "--kappa", type=float, default=0.3, help="LGA kappa threshold parameter [default=0.3]")
     parser.add_argument("-r", "--res", type=float, default=1.0, choices=[1.0, 1.5], help="Atlas resolution [default=1.0]")
     parser.add_argument("--age", type=float, default=None, help="Subject's actual chronological age in years (calculates Brain Age Gap)")
+    parser.add_argument("--age-correction", choices=["none", "linear-reference-v1"], default="none")
     parser.add_argument("--skip-qc", action="store_true", help="Skip generating visual QC report (HTML/PNG)")
     parser.add_argument("--force", action="store_true", help="Force re-run even if intermediate files exist")
     parser.add_argument("--nonlinear", action="store_true", help="Use FNIRT non-linear registration instead of linear FLIRT")
@@ -446,6 +472,8 @@ def main():
 
     args = parser.parse_args()
 
+    if args.age_correction != "none" and args.age is None:
+        parser.error("--age is required for --age-correction.")
     if args.t1 and not args.flair:
         parser.error("--flair is required when --t1 is specified.")
 
@@ -461,6 +489,7 @@ def main():
         save_mni_lesion=args.save_mni_lesion,
         subject_id=args.id,
         chronological_age=args.age,
+        age_correction=args.age_correction,
         skip_qc=args.skip_qc,
         force=args.force
     )

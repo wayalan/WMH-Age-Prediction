@@ -32,3 +32,6 @@ reports/2026-10-09_native_comparison/initial_snapshot.json
 reports/2026-10-09_native_comparison/build_pdf.py
 reports/2026-10-09_native_comparison/images/report_cover_preview.png
 docs/segmentation_audit_metrics.json
+
+# Local age-bias analysis includes participant-level research data
+analysis/

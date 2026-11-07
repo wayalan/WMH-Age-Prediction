@@ -12,6 +12,7 @@ from typing import Dict, Any, Optional
 import numpy as np
 import nibabel as nib
 import pandas as pd
+from .age_correction import correct_age
 
 
 def get_voxel_volume_cc(nii_img: nib.Nifti1Image) -> float:
@@ -63,7 +64,8 @@ def calculate_wmh_volumes_and_age(
     subject_id: str = "Subject",
     epsilon: float = 1e-4,
     chronological_age: Optional[float] = None,
-    tiv_cc: Optional[float] = None
+    tiv_cc: Optional[float] = None,
+    age_correction: str = "none"
 ) -> Dict[str, Any]:
     """
     Computes PVWMH, DWMH, and Total WMH volumes (in cc) and estimates WMH-predicted age.
@@ -90,6 +92,10 @@ def calculate_wmh_volumes_and_age(
     results : dict
         Calculated volumes, predicted age, and metadata.
     """
+    if age_correction not in ("none", "linear-reference-v1"):
+        raise ValueError("Unknown age correction method.")
+    if age_correction != "none" and chronological_age is None:
+        raise ValueError("Chronological age is required for age correction.")
     lesion_data = np.nan_to_num(lesion_img.get_fdata())
     pv_data = np.nan_to_num(pv_mask_img.get_fdata())
     dw_data = np.nan_to_num(dw_mask_img.get_fdata())
@@ -129,6 +135,9 @@ def calculate_wmh_volumes_and_age(
         c_age = float(chronological_age)
         results["Chronological_Age"] = round(c_age, 2)
         results["Brain_Age_Gap"] = round(float(pred_age - c_age), 2)
+
+    if age_correction != "none":
+        results.update(correct_age(chronological_age, raw_wmh_age=float(pred_age), method=age_correction))
 
     if tiv_cc is not None and tiv_cc > 0:
         tiv = float(tiv_cc)
