@@ -1,346 +1,153 @@
 # WMH-Age-Prediction
 
-Automated White Matter Hyperintensity (WMH) segmentation and WMH-based Brain Age Estimation pipeline for T1-weighted and 3D T2-FLAIR brain MRI scans.
+Estimate WMH age from T1-weighted and 3D FLAIR MRI, or apply age-bias correction to an existing WMH age / PAD result.
 
-This repository provides two pipelines:
-1. **`pywmh_tool`**: A standalone Python/FSL pipeline with a native-space port of the **LST Lesion Growth Algorithm (LGA)** and spatial priors (`atlas_wm` & `noles`). The growth core can be validated with identical LST inputs; FSL preprocessing does not reproduce SPM tissue maps or FLAIR bias correction automatically. Production segmentation does not require MATLAB or SPM.
-2. **`AutomatedWMHAge.m` / `run_wmh_age.sh`**: The optimized legacy MATLAB pipeline using SPM12 and the LST toolbox, enhanced for headless command-line batch processing without GUI popups.
+**Outputs:** WMH volumes, raw WMH age, and—when correction is enabled—raw PAD, corrected PAD and corrected WMH age. The Python pipeline also generates an HTML report showing raw and corrected results together.
 
----
+## Quick start
 
-## Background & Methodology
+### 1. Already have a raw WMH age or PAD?
 
-The brain age prediction model is based on the publication:
-> **Chu-Chung Huang, et al. (2022)**. *Brain white matter hyperintensities-predicted age reflects neurovascular health in middle-to-old aged subjects*. **Age and Ageing**, 51(8), afac106. [https://doi.org/10.1093/ageing/afac106](https://doi.org/10.1093/ageing/afac106)
-
-The model computes volumes for:
-- **PVWMH** (Periventricular White Matter Hyperintensity, ≤ 10 mm from ventricular lining)
-- **DWMH** (Deep White Matter Hyperintensity, > 10 mm from ventricular lining)
-
-The predicted WMH Brain Age is estimated via:
-
-$$
-\text{Predicted Age} = 11.069 \cdot \log_{10}(\max(V_{\text{PV}}, 10^{-4})) + 1.624 \cdot \log_{10}(\max(V_{\text{D}}, 10^{-4})) + 64.159
-$$
-
----
-
-## 1. Pure Python Standalone Pipeline (`pywmh_tool.py`)
-
-### Algorithmic Framework: Native Python LST-LGA
-`pywmh` is built directly upon the algorithmic principles of the **Lesion Growth Algorithm (LGA)** from the [LST toolbox](https://www.applied-statistics.de/lst.html) (Schmidt et al., 2012):
-1. **Tissue Probability Mapping**: FSL FAST estimates Partial Volume Estimation (PVE) maps for CSF, Grey Matter, and White Matter.
-   FLAIR also receives its own FAST T2 bias-field correction in acquisition space before resampling with the existing rigid transform. Correcting T1 alone leaves FLAIR intensity inhomogeneity available to create false lesion seeds.
-2. **FLAIR Normalization**: Original LST unit-width histogram mode, including tied modes.
-3. **Lesion Belief Calculation**: Initial lesion belief maps ($B_{\text{gm}}, B_{\text{wm}}, B_{\text{csf}}$) combine tissue probabilities, contrast differences, and spatial priors.
-4. **Spatial Priors**: Uses the official LST white matter prior (`atlas_wm.nii.gz`) and exclusion mask (`noles.nii.gz`) in native space to restrict lesion belief maps.
-5. **Iterative MRF Region Growing**: Uses a Markov Random Field (MRF) model with Gamma-distributed lesion likelihood and normal tissue Gaussian mixture models to iteratively grow lesions from seeds until convergence.
-6. **Original Label and Growth Rules**: T1-dependent PVE labels, FLAIR-bright CSF core relabeling, two-color sequential MRF updates and the original frontier stopping rule. No subject-specific corrections or fitted volume multipliers are used.
-
-The segmentation function now requires bias-corrected T1 intensities alongside tissue maps, or a precomputed `p0` label. FAST is run with `-B` to provide its corrected T1. Legacy lesion caches are recomputed unless their algorithm version, parameters and input hashes match. Probability outputs are explicitly float32.
-
-For identical-input native-space validation, install `requirements-validation.txt` and run:
+Run from the repository folder. This correction-only command needs Python, with no MRI images, FSL or MATLAB.
 
 ```bash
-python docs/validate_native_lga.py \
-  --cache /path/to/LST_lga_rmFLAIR.mat \
-  --reference /path/to/ples_lga_0.3_rmFLAIR.nii \
-  --output /tmp/native_lga_validation.json
+# Actual age 65; raw WMH age 70
+python3 -m pywmh.age_correction --age 65 --raw-wmh-age 70
+
+# Equivalent input: actual age 65; raw PAD +5
+python3 -m pywmh.age_correction --age 65 --raw-pad 5
 ```
 
-The adapter reads reference lesions only after segmentation for comparison. It is not imported by the production algorithm. Matching this core does not establish equivalence of the complete FAST/FSL and SPM preprocessing pipelines. See `docs/native_lga_validation.md` for the validation scope and results.
+Both produce:
 
-### The Role of $\kappa$ (Kappa)
-**Does the algorithm require $\kappa$? Yes.**
-As in the original LST-LGA implementation, $\kappa$ (kappa) is the user-definable **initial belief threshold** that governs seed initialization:
-- **Default value**: `kappa = 0.3` (the recommended baseline by the LST developers for standard 3T FLAIR scans).
-- **Lower $\kappa$ (e.g., `0.1` – `0.2`)**: More liberal; initializes more seeds, capturing subtle or faint punctate hyperintensities.
-- **Higher $\kappa$ (e.g., `0.4` – `0.5`)**: More conservative; seeds are placed only on prominent, confluent hyperintensities.
+| Result | Years |
+|---|---:|
+| Chronological age | 65.00 |
+| Raw WMH age | 70.00 |
+| Raw PAD | +5.00 |
+| Corrected WMH age | 72.53 |
+| Corrected PAD | +7.53 |
 
-### Requirements
-- Python 3.8+
-- [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki) (FLIRT, BET, FAST, APPLYWARP)
-- Python packages:
-  ```bash
-  pip install -r requirements.txt
-  ```
+Add `--out corrected.json` to save the result. Supply **one** of `--raw-wmh-age` or `--raw-pad`.
 
-### Usage
+### 2. Start from MRI and include correction
+
+Install Python 3.8+, [FSL](https://fsl.fmrib.ox.ac.uk/fsl/docs/) and the Python dependencies. FSL commands must be on your PATH and `FSLDIR` configured.
+
 ```bash
-python pywmh_tool.py \
+pip install -r requirements.txt
+
+python3 pywmh_tool.py \
   --t1 /path/to/T1w.nii.gz \
   --flair /path/to/FLAIR.nii.gz \
-  --age 65.0 \
-  --outdir /path/to/output_directory \
-  --kappa 0.3
+  --age 65 \
+  --age-correction linear-reference-v1 \
+  --outdir /path/to/output
 ```
 
-#### Arguments:
-- `--t1`: Path to T1-weighted structural MRI scan (`.nii` or `.nii.gz`).
-- `--flair`: Path to a FLAIR MRI scan (`.nii` or `.nii.gz`).
-- `--age`: (Optional) Patient's actual chronological age in years. Automatically computes **Brain Age Gap (BAG)**.
-- `--outdir`: Directory to save outputs.
-- `--kappa`: Initial lesion belief threshold (default: `0.3`, standard LST-LGA setting).
-- `--skip-qc`: (Optional) Skip generating visual QC HTML/PNG reports.
-- `--force`: (Optional) Force re-running all steps even if intermediate files exist.
-- `--nonlinear`: Use FSL FNIRT for non-linear registration to MNI (default: 12-DOF affine FLIRT for speed).
-- Configure the FSL installation through `$FSLDIR` and ensure its commands are on `$PATH`.
+The pipeline calculates raw WMH age automatically and then applies correction. **Include both `--age` and `--age-correction linear-reference-v1`.** `--age` alone calculates the raw age gap; it does not enable correction.
 
-### Outputs
-- `WMH_Age_QC_Report.html`: Self-contained HTML report with embedded high-resolution graphics, metrics tables, GMV / WMV / CSFV / estimated TIV, and registration sanity checks.
-- `qc_summary.png`: Multi-slice thumbnail snapshot with tissue volumes for rapid Finder / Explorer review.
-- `WMH_Age_Results.csv`: Extended summary table with Total WMH, PVWMH, DWMH, GMV, WMV, CSFV, estimated TIV, % TIV, Predicted Age, Brain Age Gap, Lobar WMH (Frontal, Parietal, Temporal, Occipital, Subcortical), and Arterial Vascular WMH (ACA, MCA, PCA, VB).
-- `WMH_Age_Results.json`: Comprehensive machine-readable quantification results.
-- `bles_lga_k30.nii.gz`: Native-space binary WMH lesion mask.
-- `ples_lga_k30.nii.gz`: Native-space lesion probability map.
-- `native_PVWMH.nii.gz`: Native-space periventricular mask.
-- `native_DWMH.nii.gz`: Native-space deep white matter mask.
-- `native_lobar.nii.gz`: Native-space cerebral lobar parcellation.
-- `native_arterial.nii.gz`: Native-space arterial vascular territory parcellation.
-- `rmFLAIR.nii.gz`: Rigidly co-registered FLAIR aligned to T1.
-- `flair_bias/FLAIR_corrected.nii.gz`: Bias-corrected FLAIR in its original acquisition space.
-- `flair_bias/rmFLAIR_corrected.nii.gz`: Corrected FLAIR aligned to T1, used for LGA and QC.
-- `flair_bias/correction_inputs.json`: Correction settings, source hashes and corrected-output hashes. Legacy lesion maps are regenerated when the corrected LGA input changes.
+For the original raw-only prediction, omit `--age-correction`. Segmentation and the raw prediction formula are unchanged.
 
-Tissue volumes are saved as `GMV_cc`, `WMV_cc`, `CSFV_cc`, and `TIV_cc` (1 cc = 1 mL). Each tissue volume is the sum of its native-space FAST partial-volume fractions multiplied by voxel volume, without binary thresholding, following [FSL's tissue volume quantification guidance](https://fsl.fmrib.ox.ac.uk/fsl/docs/structural/fast.html#tissue-volume-quantification). `TIV_cc = GMV_cc + WMV_cc + CSFV_cc`. This is an estimate over the BET-extracted input, so it depends on brain extraction coverage and is not a separate whole-intracranial cavity measurement or an SPM/CAT TIV equivalent. The CSV and JSON also record the calculation method. Lesion-only input (`--lesion`) cannot provide tissue volumes: these fields are empty in CSV and `null` in JSON. Re-running the full pipeline in an existing output directory refreshes results and QC from cached tissue maps.
-
-The FLAIR correction addresses a missing preprocessing stage; FAST remains an approximation to SPM's intensity correction and tissue segmentation. The complete pipeline is **not yet equivalent to original MATLAB LST**, including on low-lesion-burden scans. See the [FLAIR correction validation and remaining differences](docs/flair_preprocessing_validation.md).
-
----
-
-## 2. Headless MATLAB Pipeline (`run_wmh_age.sh`)
-
-If you require exact legacy SPM12/LST execution without launching the MATLAB GUI:
+### 3. Start from an existing MNI lesion map
 
 ```bash
-./run_wmh_age.sh \
-  /Applications/MATLAB_R2022a.app/bin/matlab \
-  /path/to/subjects_folder \
-  /path/to/WMH_Atlas \
-  /path/to/spm12
+python3 pywmh_tool.py \
+  --lesion /path/to/m0wples.nii.gz \
+  --res 1.5 \
+  --age 65 \
+  --age-correction linear-reference-v1 \
+  --outdir /path/to/output
 ```
 
-*(Note: The MATLAB version is also archived on the `matlab-version` branch of this repository).*
+Use `--res 1.0` or `1.5` to match the lesion map and bundled atlas grid. Lesion-only input produces an age summary rather than MRI registration QC or tissue-volume estimates.
 
----
+## Results and reports
 
-## Segmentation Examples
+| File | Contents |
+|---|---|
+| `WMH_Age_Results.csv` / `.json` | Volumes and age results; raw and corrected fields when enabled |
+| `WMH_Age_QC_Report.html` | Full MRI pipeline: image QC, tissue volumes, raw and corrected age/PAD |
+| `qc_summary.png` | Full MRI pipeline: slice overview and raw/corrected age summary |
+| `WMH_Age_Summary.html` | Lesion-only run with correction: raw/corrected age table |
+| `ples_lga_k30.nii.gz` / `bles_lga_k30.nii.gz` | Full MRI pipeline: lesion probabilities / binary mask |
 
-The following figures show two real-data examples comparing the MATLAB LST and Python results.
+`Predicted_Age` always means raw WMH age; the existing `Brain_Age_Gap` field remains raw PAD. Correction adds `Raw_WMH_Age`, `Raw_PAD`, `Corrected_WMH_Age`, `Corrected_PAD`, `Chronological_Age`, and `Age_Correction_Method`.
 
-From left to right: FLAIR background, MATLAB LST segmentation, Python segmentation, and overlap/differences. In the last column, blue indicates MATLAB-only regions, orange Python-only regions, and white overlap.
+## How correction works
 
-**Example 1**
+`Age` below means chronological age at the MRI scan, in years.
 
-![WMH segmentation comparison: Example 1](docs/images/example_1_wmh_comparison.png)
-
-**Example 2**
-
-![WMH segmentation comparison: Example 2](docs/images/example_2_wmh_comparison.png)
-
-[Detailed test report](reports/2026-10-09_native_comparison/WMH_native_comparison_2026-10-09.pdf) · [Numerical validation](docs/native_lga_validation.md)
-
----
-
-## Repository Structure
-```
-WMH-Age-Prediction/
-├── pywmh/                  # Python core algorithmic library
-│   ├── __init__.py
-│   ├── lst_lga.py          # Native LST labels, beliefs and growth equations
-│   ├── fsl_engine.py       # FSL wrapper (FLIRT, BET, FAST, APPLYWARP)
-│   └── age_model.py        # WMH masking and age regression model
-├── pywmh_tool.py           # CLI master entry point for Python pipeline
-├── wmh_age_calc.py         # Standalone age calculator given existing masks
-├── AutomatedWMHAge.m       # Optimized MATLAB pipeline (SPM12/LST)
-├── run_wmh_age.sh          # Headless shell script for MATLAB execution
-├── WMH_Atlas/              # 1mm and 1.5mm PV/D WMH atlases, atlas_wm & noles
-├── requirements.txt        # Python package dependencies
-├── LICENSE                 # GNU GPL v3
-└── README.md               # Documentation
+```text
+Raw PAD           = Raw WMH Age - Age
+Expected PAD      = 17.525493 - 0.308500 × Age
+Corrected PAD     = Raw PAD - Expected PAD
+Corrected WMH Age = Age + Corrected PAD
 ```
 
----
+`linear-reference-v1` identifies these fixed reference parameters. It is post-processing of the raw prediction, and requires chronological age. The corrected WMH age therefore includes actual age; it is not an independent MRI-only age prediction.
 
-## Acknowledgements & Software Attributions
+The correction was derived from the original healthy reference sample (n=491), and reduces rather than completely removes age dependence in the ILAS test sample. Reference volume preprocessing differed from the current pipeline's volume floor; applicability to other processing/acquisition conditions needs validation. See [correction details and validation](docs/age_correction.md) for full-precision coefficients and limitations.
 
-This project builds upon and integrates foundational tools developed by the neuroimaging community:
+## MATLAB
 
-- **[LST (Lesion Segmentation Tool)](https://www.applied-statistics.de/lst.html)**: Developed by Paul Schmidt, Christian Gaser, and colleagues at the Technische Universität München. The Python native LGA equations are ported from the original LST implementation; complete pipeline equivalence also requires equivalent upstream inputs.
-- **[FSL (FMRIB Software Library)](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki)**: Developed by the Analysis Group, FMRIB, University of Oxford. Used in this pipeline for robust structural brain extraction (`bet`), rigid cross-modal co-registration (`flirt`), automated tissue segmentation (`fast`), and the MNI Structural Atlas.
-- **[Digital 3D Brain MRI Arterial Territories Atlas](https://github.com/Chin-Fu-Liu/Arterial_Atlas)**: Developed by Chin-Fu Liu, Andreia Faria, and colleagues at Johns Hopkins University School of Medicine. Used for hierarchical parcellation of major arterial vascular territories (ACA, MCA, PCA, VB).
-- **[SPM (Statistical Parametric Mapping)](https://www.fil.ion.ucl.ac.uk/spm/)**: Developed by the Wellcome Centre for Human Neuroimaging, University College London (UCL). Hosts the reference MATLAB implementation of the LST toolbox.
+Requires MATLAB, SPM12, CAT12 and LST on the MATLAB path.
 
----
+```matlab
+% MRI pipeline with correction
+[vol, rawAge, ageResults] = AutomatedWMHAge('/path/to/subject', ...
+    'chronological_age', 65, ...
+    'age_correction', 'linear-reference-v1');
+
+% Correct an existing raw age or PAD
+r = CorrectWMHAge(65, 'raw_wmh_age', 70);
+r = CorrectWMHAge(65, 'raw_pad', 5);
+```
+
+MATLAB saves volumes and age results to CSV/MAT. The HTML/PNG reports above belong to the Python pipeline.
+
+For the legacy headless raw-only workflow:
+
+```bash
+./run_wmh_age.sh /path/to/subject 0.3 1.5 /path/to/output
+```
+
+## Options
+
+Run `python3 pywmh_tool.py --help` for all arguments.
+
+| Option | Purpose |
+|---|---|
+| `--age` | Chronological age at scan |
+| `--age-correction linear-reference-v1` | Enable correction; requires `--age` |
+| `--kappa 0.3` | Initial lesion seed threshold; default 0.3 |
+| `--res 1.0` | Atlas resolution; default 1.0 mm for `pywmh_tool.py` |
+| `--skip-qc` | Skip HTML/PNG report generation |
+| `--nonlinear` | Use FNIRT rather than affine registration |
+| `--force` | Recompute cached processing stages |
+
+The standalone image calculator `wmh_age_calc.py` also supports `--age` and `--age-correction`; see its `--help` for input and CSV options.
+
+## Model and validation
+
+The raw model uses log-transformed periventricular (PVWMH) and deep (DWMH) lesion volumes in mL:
+
+```text
+Raw WMH Age = 11.069 × log10(PVWMH) + 1.624 × log10(DWMH) + 64.159
+```
+
+Current software uses a minimum volume of `0.0001 mL` before log10. The original study used additive minimum-volume constants; correction does not alter this preprocessing.
+
+The Python segmentation uses a native LST-LGA implementation with FSL preprocessing. It does not reproduce the complete SPM/LST pipeline exactly. See [native LGA validation](docs/native_lga_validation.md), [FLAIR preprocessing validation](docs/flair_preprocessing_validation.md), and [methods and references](docs/methods_and_references.md).
+
+[Example segmentation comparisons and report](reports/2026-10-09_native_comparison/WMH_native_comparison_2026-10-09.pdf)
 
 ## Citation
 
-Please cite the corresponding papers depending on which components you use in your study:
+Huang CC, et al. *Brain white matter hyperintensities-predicted age reflects neurovascular health in middle-to-old aged subjects*. Age and Ageing. 2022;51(5):afac106. [DOI: 10.1093/ageing/afac106](https://doi.org/10.1093/ageing/afac106).
 
-### 1. For White Matter Hyperintensity (WMH) Lesion Segmentation (LST-LGA):
-> **Schmidt P**, et al. *An automated tool for detection of FLAIR-hyperintense white-matter lesions in Multiple Sclerosis*. **NeuroImage**. 2012;59(4):3774-3788.  
-> DOI: [10.1016/j.neuroimage.2011.11.032](https://doi.org/10.1016/j.neuroimage.2011.11.032)
-
-```bibtex
-@article{schmidt2012automated,
-  title={An automated tool for detection of FLAIR-hyperintense white-matter lesions in Multiple Sclerosis},
-  author={Schmidt, Paul and others},
-  journal={NeuroImage},
-  volume={59},
-  number={4},
-  pages={3774--3788},
-  year={2012},
-  publisher={Elsevier},
-  doi={10.1016/j.neuroimage.2011.11.032}
-}
-```
-
-### 2. For WMH-based Brain Age Prediction & Regional WMH Volume Calculation (PVWMH / DWMH):
-> **Huang CC**, et al. *Brain white matter hyperintensities-predicted age reflects neurovascular health in middle-to-old aged subjects*. **Age and Ageing**. 2022;51(8):afac106.  
-> DOI: [10.1093/ageing/afac106](https://doi.org/10.1093/ageing/afac106)
-
-```bibtex
-@article{huang2022brain,
-  title={Brain white matter hyperintensities-predicted age reflects neurovascular health in middle-to-old aged subjects},
-  author={Huang, Chu-Chung and others},
-  journal={Age and Ageing},
-  volume={51},
-  number={8},
-  pages={afac106},
-  year={2022},
-  publisher={Oxford University Press},
-  doi={10.1093/ageing/afac106}
-}
-```
-
-### 3. For Arterial Vascular Territory Parcellation:
-> **Liu CF**, Hsu J, Xu X, Kim G, Sheppard SM, Meier EL, Miller MI, Hillis AE, Faria AV. *Digital 3D Brain MRI Arterial Territories Atlas*. **Scientific Data**. 2023;10(1):74.  
-> DOI: [10.1038/s41597-022-01923-0](https://doi.org/10.1038/s41597-022-01923-0)
-
-```bibtex
-@article{liu2023digital,
-  title={Digital 3D Brain MRI Arterial Territories Atlas},
-  author={Liu, Chin-Fu and Hsu, Jui-Yang and Xu, Xiaoying and Kim, Gina and Sheppard, Shannon M and Meier, Elizabeth L and Miller, Michael I and Hillis, Argye E and Faria, Andreia V},
-  journal={Scientific Data},
-  volume={10},
-  number={1},
-  pages={74},
-  year={2023},
-  publisher={Nature Publishing Group UK London},
-  doi={10.1038/s41597-022-01923-0}
-}
-```
-
-### 4. For Cerebral Lobar Parcellation (MNI Structural Atlas):
-> **Mazziotta J**, et al. *A probabilistic atlas and reference system for the human brain: International Consortium for Brain Mapping (ICBM)*. **Philosophical Transactions of the Royal Society of London. Series B: Biological Sciences**. 2001;356(1412):1293-1322.  
-> DOI: [10.1098/rstb.2001.0915](https://doi.org/10.1098/rstb.2001.0915)  
-> **Collins DL**, Holmes CJ, Peters TM, Evans AC. *Automatic 3-D model-based neuroanatomical segmentation*. **Human Brain Mapping**. 1995;3(3):190-208.  
-> DOI: [10.1002/hbm.460030304](https://doi.org/10.1002/hbm.460030304)
-
-```bibtex
-@article{mazziotta2001probabilistic,
-  title={A probabilistic atlas and reference system for the human brain: International Consortium for Brain Mapping (ICBM)},
-  author={Mazziotta, John and others},
-  journal={Philosophical Transactions of the Royal Society of London. Series B: Biological Sciences},
-  volume={356},
-  number={1412},
-  pages={1293--1322},
-  year={2001},
-  publisher={The Royal Society},
-  doi={10.1098/rstb.2001.0915}
-}
-```
-
-### 5. For FSL Processing Tools:
-> **Jenkinson M**, Beckmann CF, Behrens TE, Woolrich MW, Smith SM. *FSL*. **NeuroImage**. 2012;62(2):782-790.  
-> DOI: [10.1016/j.neuroimage.2011.09.015](https://doi.org/10.1016/j.neuroimage.2011.09.015)
-
-```bibtex
-@article{jenkinson2012fsl,
-  title={FSL},
-  author={Jenkinson, Mark and Beckmann, Christian F and Behrens, Timothy EJ and Woolrich, Mark W and Smith, Stephen M},
-  journal={NeuroImage},
-  volume={62},
-  number={2},
-  pages={782--790},
-  year={2012},
-  publisher={Elsevier},
-  doi={10.1016/j.neuroimage.2011.09.015}
-}
-```
+Please also cite the segmentation and atlas tools used in your study; [full citations and acknowledgements](docs/methods_and_references.md).
 
 ## License
-GNU General Public License v3; see LICENSE.
 
-## Optional age-bias correction (`linear-reference-v1`)
-
-The original prediction and volume/log preprocessing remain the default. Age
-correction is an optional post-processing step; it does not segment images,
-change volumes, or retrain the original model. Supply chronological age at scan
-and either an existing raw WMH age or raw PAD (exactly one).
-
-```bash
-# Existing results: no images, FSL, or MATLAB required
-python3 -m pywmh.age_correction --age 65 --raw-wmh-age 70 --out corrected.json
-python3 -m pywmh.age_correction --age 65 --raw-pad 5
-
-# Pipeline: raw age is supplied automatically by the original model
-python3 pywmh_tool.py --t1 T1w.nii --flair FLAIR.nii --age 65 \
-  --age-correction linear-reference-v1 -o output
-
-# Also supported with --lesion, and by the standalone image calculator
-python3 wmh_age_calc.py --input m0wples.nii --res 1.5 --age 65 \
-  --age-correction linear-reference-v1 --out results.csv
-```
-
-```python
-from pywmh.age_correction import correct_age
-result = correct_age(65, raw_wmh_age=70)  # alternatively raw_pad=5
-```
-
-```matlab
-r = CorrectWMHAge(65, 'raw_wmh_age', 70); % alternatively 'raw_pad', 5
-[vol, rawAge, ageResults] = AutomatedWMHAge('subject', ...
-    'chronological_age', 65, 'age_correction', 'linear-reference-v1');
-```
-
-The fixed correction is:
-
-```text
-Raw_PAD = Raw_WMH_Age - Chronological_Age
-Expected_PAD = 17.52549262674548 - 0.30849983973570466 * Chronological_Age
-Corrected_PAD = Raw_PAD - Expected_PAD
-Corrected_WMH_Age = Chronological_Age + Corrected_PAD
-```
-
-For raw age 70 and chronological age 65, raw PAD is +5, corrected PAD is
-+7.526997 years and corrected WMH age is 72.526997 years. Calculations use
-unrounded predictions; formatting is applied only for display. Existing
-`Predicted_Age` and `Brain_Age_Gap` fields keep their raw meaning. Enabling
-correction adds `Raw_WMH_Age`, `Raw_PAD`, `Corrected_WMH_Age`, `Corrected_PAD`,
-`Chronological_Age`, and `Age_Correction_Method`. Python CSV/JSON and MATLAB
-CSV/MAT include these fields. The Python QC HTML and summary PNG display raw
-and corrected results. Missing age is an error when correction is requested.
-
-### Reference and interpretation
-
-This is a newly derived reference correction, not a correction reported in the
-2022 paper. Parameters were estimated from the original healthy reference
-(n=491; 312 TAMI + 179 ILAS), using in-sample raw PAD versus age. Original
-reference volumes used additive offsets before log10: 0.00147 mL for TAMI and
-0.00098 mL for ILAS. The software's existing volume-floor preprocessing remains
-unchanged; applying this correction to a different preprocessing/acquisition
-pipeline requires validation. The module accepts existing raw results and does
-not determine whether they satisfy those reference conditions.
-
-Nested 10-fold validation in the reference sample reduced PAD-age slope from
--0.31145 to 0.00047. Applying fixed full-reference parameters to the remaining
-ILAS sample (n=726) reduced slope from -0.52384 to -0.21534; residual age
- dependence remains. No ILAS test data were used to fit correction parameters.
-The corrected age explicitly incorporates chronological age: a lower MAE or
-closer agreement with chronological age does not establish improved MRI-only
-prediction or biological validity. Reference ages were 21–89 years; application
-outside the reference population is not validated. Original AA/NA/DA grouping
-boundaries are not redefined by this feature.
-
-Individual reference/test records and local analysis files are not distributed.
+GNU General Public License v3; see [LICENSE](LICENSE).
