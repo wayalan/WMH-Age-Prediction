@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 from pywmh.age_model import calculate_tissue_volumes, save_results
+from pywmh.age_correction import correct_age
 from pywmh.qc_report import generate_qc_report
 from pywmh_tool import run_pipeline
 
@@ -91,13 +92,19 @@ class TissueVolumeTests(unittest.TestCase):
             for name, data in (('flair', background), ('t1', background), ('lesion', lesion),
                                ('pv', np.ones(shape)), ('dw', np.zeros(shape))):
                 nib.save(nib.Nifti1Image(data, np.eye(4)), root / f'{name}.nii.gz')
-            for results in (calculate_tissue_volumes(*self.maps()), {'TIV_cc': 1000.}):
+            for results in (calculate_tissue_volumes(*self.maps()), {'TIV_cc': 1000.},
+                            dict(correct_age(65, raw_wmh_age=70), Predicted_Age=70, Brain_Age_Gap=5)):
                 generate_qc_report(*(str(root / f'{name}.nii.gz') for name in ('flair', 't1', 'lesion', 'pv', 'dw')),
                                    results=results, out_html=str(root / 'qc.html'), out_png=str(root / 'qc.png'))
                 html = (root / 'qc.html').read_text()
                 for label in ('GMV', 'WMV', 'CSFV', 'TIV'):
                     self.assertIn(f'{label} ·', html)
                 self.assertIn('TIV = GMV + WMV + CSFV', html)
+                if 'Corrected_PAD' in results:
+                    for label in ('Raw WMH Age', 'Raw PAD', 'Corrected WMH Age', 'Corrected PAD'):
+                        self.assertIn(label, html)
+                    self.assertIn('72.53', html)
+                    self.assertIn('+7.53', html)
                 if 'GMV_cc' in results:
                     self.assertIn('0.02 <span class="metric-unit">mL</span>', html)
                     self.assertIn('0.10 <span class="metric-unit">mL</span>', html)

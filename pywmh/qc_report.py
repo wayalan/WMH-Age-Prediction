@@ -210,6 +210,12 @@ def generate_qc_report(
     fig_multislice.text(0.5, 0.025, "TIV = GMV + WMV + CSFV (tissue-sum estimate)",
                         ha="center", color="#a1a1aa", fontsize=10)
 
+    if results.get("Corrected_PAD") is not None:
+        fig_multislice.text(0.5, 0.105,
+            f"Raw age {results['Raw_WMH_Age']:.2f} / PAD {results['Raw_PAD']:+.2f} yr  |  "
+            f"Corrected age {results['Corrected_WMH_Age']:.2f} / PAD {results['Corrected_PAD']:+.2f} yr",
+            ha="center", color="#e4e4e7", fontsize=10)
+
     # Save standalone summary PNG
     fig_multislice.savefig(out_png, dpi=150, bbox_inches="tight", facecolor="#18181b")
     b64_multislice = _img_to_base64(fig_multislice)
@@ -240,9 +246,24 @@ def generate_qc_report(
         bag_sign = f"+{bag:.2f}" if bag > 0 else f"{bag:.2f}"
         bag_html = f"""
         <div class="metric-card">
-            <div class="metric-title">Brain Age Gap (BAG)</div>
+            <div class="metric-title">Raw PAD (Brain Age Gap)</div>
             <div class="metric-value" style="color: {bag_color};">{bag_sign} <span class="metric-unit">yrs</span></div>
             <div class="metric-sub">Chronological Age: {c_age:.1f} yrs</div>
+        </div>
+        """
+
+    correction_html = ""
+    if results.get("Corrected_PAD") is not None:
+        correction_html = f"""
+        <div class="metric-card">
+            <div class="metric-title">Corrected WMH Age</div>
+            <div class="metric-value">{results['Corrected_WMH_Age']:.2f} <span class="metric-unit">yrs</span></div>
+            <div class="metric-sub">Age + corrected PAD; uses chronological age</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Corrected PAD</div>
+            <div class="metric-value">{results['Corrected_PAD']:+.2f} <span class="metric-unit">yrs</span></div>
+            <div class="metric-sub">linear-reference-v1; residual age dependence may remain</div>
         </div>
         """
 
@@ -451,11 +472,12 @@ def generate_qc_report(
     <!-- Key Metrics Grid -->
     <div class="grid-metrics">
         <div class="metric-card">
-            <div class="metric-title">Predicted WMH-Age</div>
+            <div class="metric-title">Raw WMH Age</div>
             <div class="metric-value" style="color: #60a5fa;">{pred_age:.2f} <span class="metric-unit">yrs</span></div>
             <div class="metric-sub">Neurovascular biological age</div>
         </div>
         {bag_html}
+        {correction_html}
         <div class="metric-card">
             <div class="metric-title">Total WMH Volume</div>
             <div class="metric-value">{total_wmh:.3f} <span class="metric-unit">cc</span></div>

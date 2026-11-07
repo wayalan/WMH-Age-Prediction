@@ -7,8 +7,14 @@ Modules:
     age_model  : PVWMH / DWMH atlas parcellation & WMH-predicted age estimation
 """
 
-from .lst_lga import segment_wmh_lga
-from .age_model import calculate_wmh_volumes_and_age
-from .fsl_engine import check_fsl_installed
+def __getattr__(name):
+    # Keep independent age correction usable without imaging dependencies.
+    from importlib import import_module
+    modules = {'segment_wmh_lga': 'lst_lga',
+               'calculate_wmh_volumes_and_age': 'age_model',
+               'check_fsl_installed': 'fsl_engine'}
+    if name not in modules:
+        raise AttributeError(name)
+    return getattr(import_module('.' + modules[name], __name__), name)
 
 __version__ = "1.0.0"

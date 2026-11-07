@@ -20,17 +20,24 @@ import sys
 import argparse
 import numpy as np
 import nibabel as nib
+from pywmh.age_correction import correct_age
 
 
 def compute_wmh_age(
     wmh_path: str,
     atlas_dir: str = None,
     voxel_size: float = 1.5,
-    epsilon: float = 1e-4
+    epsilon: float = 1e-4,
+    chronological_age: float = None,
+    age_correction: str = "none"
 ):
     """
     Computes PVWMH, DWMH, Total WMH volume (in cc/ml) and predicted WMH-Age.
     """
+    if age_correction not in ("none", "linear-reference-v1"):
+        raise ValueError("Unknown age correction method.")
+    if age_correction != "none" and chronological_age is None:
+        raise ValueError("Chronological age is required for age correction.")
     if not os.path.exists(wmh_path):
         raise FileNotFoundError(f"WMH file not found: {wmh_path}")
 
@@ -77,13 +84,19 @@ def compute_wmh_age(
     # Regression formula: Huang et al., Age Ageing 2022
     pred_age = 11.069 * np.log10(pv_safe) + 1.624 * np.log10(dw_safe) + 64.159
 
-    return {
+    results = {
         "Total_WMH_cc": total_vol,
         "PVWMH_cc": pv_vol,
         "DWMH_cc": dw_vol,
         "Predicted_Age": pred_age,
         "Voxel_Size_mm": voxel_size
     }
+
+    if chronological_age is not None:
+        results.update(Chronological_Age=float(chronological_age), Raw_PAD=float(pred_age-chronological_age))
+    if age_correction != "none":
+        results.update(correct_age(chronological_age, raw_wmh_age=float(pred_age), method=age_correction))
+    return results
 
 
 def main():
@@ -93,11 +106,17 @@ def main():
     parser.add_argument("-a", "--atlas", default=None, help="Path to WMH_Atlas folder")
     parser.add_argument("-o", "--out", default=None, help="Output CSV path")
 
+    parser.add_argument("--age", type=float)
+    parser.add_argument("--age-correction", choices=["none", "linear-reference-v1"], default="none")
     args = parser.parse_args()
+    if args.age_correction != "none" and args.age is None:
+        parser.error("--age is required for --age-correction.")
 
     results = compute_wmh_age(
         wmh_path=args.input,
         atlas_dir=args.atlas,
+        chronological_age=args.age,
+        age_correction=args.age_correction,
         voxel_size=args.res
     )
 
@@ -106,6 +125,10 @@ def main():
     print(f"PVWMH Volume      : {results['PVWMH_cc']:.3f} cc")
     print(f"DWMH Volume       : {results['DWMH_cc']:.3f} cc")
     print(f"Predicted WMH Age : {results['Predicted_Age']:.2f} years old")
+    if "Corrected_PAD" in results:
+        print(f"Raw PAD           : {results['Raw_PAD']:+.2f} years")
+        print(f"Corrected WMH Age : {results['Corrected_WMH_Age']:.2f} years")
+        print(f"Corrected PAD     : {results['Corrected_PAD']:+.2f} years")
     print("=========================================")
 
     if args.out:

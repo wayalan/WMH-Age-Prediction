@@ -1,4 +1,4 @@
-function [WMHvolume, PredAge] = AutomatedWMHAge(SourceFolder, varargin)
+function [WMHvolume, PredAge, AgeResults] = AutomatedWMHAge(SourceFolder, varargin)
 %% A Linear Regression Model Using Periventricular WMH and Deep WMH to Predict Individual's Age
 % This is a toolbox for PVWMH DWMH segmentation and WMH-Age prediction.
 % This tool requires SPM12 with CAT12 and LST toolboxes installed.
@@ -40,6 +40,8 @@ addParameter(p, 'voxel_size', 1.5, @(x) isnumeric(x) && ismember(x, [1.0, 1.5]))
 addParameter(p, 'outdir', '', @(x) ischar(x) || isstring(x));
 addParameter(p, 'nproc', min(4, feature('numcores')), @isnumeric);
 addParameter(p, 'force', false, @islogical);
+addParameter(p, 'chronological_age', [], @(x) isempty(x) || (isnumeric(x) && isscalar(x) && isreal(x) && isfinite(x) && x > 0));
+addParameter(p, 'age_correction', 'none', @(x) any(strcmp(x, {'none', 'linear-reference-v1'})));
 
 % Support legacy positional arguments: AutomatedWMHAge(SourceFolder, kappa, vx_size, outdir)
 if ~isempty(varargin) && isnumeric(varargin{1})
@@ -61,6 +63,12 @@ else
     force_rerun = p.Results.force;
 end
 
+chronological_age = p.Results.chronological_age;
+age_correction = char(p.Results.age_correction);
+if ~strcmp(age_correction, 'none') && isempty(chronological_age)
+    error('chronological_age is required for age correction.');
+end
+AgeResults = struct();
 SourceFolder = char(SourceFolder);
 if ~isfolder(SourceFolder)
     error('Source folder does not exist: %s', SourceFolder);
@@ -331,6 +339,16 @@ end
 % Paper formula: Huang et al., Age Ageing 2022
 PredAge = 11.069 * log10(pv_val_for_log) + 1.624 * log10(d_val_for_log) + 64.159;
 
+if ~isempty(chronological_age)
+    AgeResults.Chronological_Age = chronological_age;
+    AgeResults.Raw_WMH_Age = PredAge;
+    AgeResults.Raw_PAD = PredAge - chronological_age;
+end
+if strcmp(age_correction, 'linear-reference-v1')
+    AgeResults = CorrectWMHAge(chronological_age, 'raw_wmh_age', PredAge);
+    fprintf('Corrected WMH Age: %.2f years; Corrected PAD: %+.2f years\n', ...
+        AgeResults.Corrected_WMH_Age, AgeResults.Corrected_PAD);
+end
 fprintf('\n----------------- Results -----------------\n');
 fprintf('Total WMH Volume : %.3f cc\n', WMHvolume.Total);
 fprintf('PVWMH Volume     : %.3f cc\n', WMHvolume.PV);
@@ -343,11 +361,17 @@ fprintf('-------------------------------------------\n\n');
 res_table = table({subj_id}, WMHvolume.Total, WMHvolume.PV, WMHvolume.D, PredAge, kappa_value, vx_size, ...
     'VariableNames', {'SubjectID', 'Total_WMH_cc', 'PVWMH_cc', 'DWMH_cc', 'Predicted_Age', 'Kappa', 'Resolution_mm'});
 
+fields = fieldnames(AgeResults);
+for i = 1:numel(fields)
+    value = AgeResults.(fields{i});
+    if ischar(value), value = {value}; end
+    res_table.(fields{i}) = value;
+end
 csv_path = fullfile(OutDir, 'WMH_Age_Results.csv');
 writetable(res_table, csv_path);
 
 mat_path = fullfile(OutDir, 'WMH_Age_Results.mat');
-save(mat_path, 'WMHvolume', 'PredAge', 'res_table');
+save(mat_path, 'WMHvolume', 'PredAge', 'res_table', 'AgeResults');
 
 fprintf('Results saved to:\n  %s\n  %s\n', csv_path, mat_path);
 fprintf('Processing completed successfully.\n');
